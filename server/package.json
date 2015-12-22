@@ -1,0 +1,21 @@
+{
+	"name": "vscode-ghc-mod-server",
+	"description": "Implementation of a language server for ghc-mod.",
+	"version": "0.0.1",
+	"author": "Cody Hoover",
+    "publisher":"hoovercj",
+	"license": "MIT",
+	"engines": {
+		"node": "*"
+	},
+	"dependencies": {
+		"vscode-languageserver": "^1.1.0"
+	},
+	"devDependencies": {
+		"typescript": "^1.6.2"
+	},
+	"scripts": {
+		"compile": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
+		"watch": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc --watch -p ."
+	}
+}
