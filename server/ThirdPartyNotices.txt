@@ -9,6 +9,7 @@ granted, whether by implication, estoppel or otherwise.
  
 1.       DefinitelyTyped version 0.0.1 (https://github.com/borisyankov/DefinitelyTyped)
 2.       vscode-language-server-node-example version 0.0.1 (https://github.com/Microsoft/vscode-languageserver-node-example)
+3.       atom-haskell/haskell-ghc-mod (https://github.com/atom-haskell/haskell-ghc-mod)
  
 This project is licensed under the MIT license.
 Copyrights are respective of each contributor listed at the beginning of each definition file.
