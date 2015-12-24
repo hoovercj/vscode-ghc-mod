@@ -15,8 +15,12 @@ To get the application running, clone the whole repository and run `npm install`
 ## Debugging the extension
 After running the extension as explained above, press `F5` in a seperate instance of VS Code that has the `server` directory open. This will attach the debugger to the extension host.
 
+## Server Components
+There are three main components with distinct responsibilities. `server.ts` is responsible for all communication with VS Code. `ghcModProcess.ts` is a wrapper around the ghc-mod process and handles reading and writing to the process vs stdin/stdout to issue commands and process output. `ghcMod.ts` is the middleman. It exposes the supported ghc-mod commands to `server.ts` via public methods such as `getType` and `doCheck` and issues properly formed commands to `ghcModProcess.ts`. It returns the results via promises.
+
 ## Features
 - `ghc-mod check`
+- `ghc-mod type`
 
 ## Next steps
 The extension is based heavily on the [ghc-mod package][ghc-mod-atom] for atom. The file `ghcModProcess.ts` serves as a wrapper for a childProcess which can be issued ghc-mod commands. Currently everything else is smashed into the main `server.ts` but should be changed to reflect the better organization of the atom package.

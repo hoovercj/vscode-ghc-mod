@@ -4,6 +4,9 @@
  * ------------------------------------------------------------------------------------------ */
 import * as cp from 'child_process';
 import {EOL} from 'os'
+import {
+    IConnection
+} from 'vscode-languageserver';
 
 export interface GhcModOpts {
     command: string,
@@ -12,13 +15,13 @@ export interface GhcModOpts {
     args?: string[]
 }
 
-export class GhcModProcess {
+export class GhcModProcess {    
 
     private EOT = EOL + '\x04' + EOL;
     private childProcess:cp.ChildProcess;
-    private connection;
+    private connection:IConnection;
     
-    constructor(connection) {
+    constructor(connection:IConnection) {
         this.connection = connection;
     }
    

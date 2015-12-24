@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"target": "es5", // TODO: es6 doesn't work for some reason
+		"target": "es5",
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"sourceMap": true,

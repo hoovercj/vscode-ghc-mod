@@ -5,13 +5,14 @@
 'use strict';
 
 import {
-    IPCMessageReader, IPCMessageWriter,
-    createConnection, IConnection, TextDocumentSyncKind,
-    TextDocuments, ITextDocument, Diagnostic, DiagnosticSeverity, InitializeResult
+IPCMessageReader, IPCMessageWriter,
+createConnection, IConnection, TextDocumentSyncKind,
+TextDocuments, ITextDocument, Diagnostic, DiagnosticSeverity, InitializeResult, Hover
 } from 'vscode-languageserver';
 
-import {GhcModOpts, GhcModProcess} from './ghcModProcess';
-let ghcModProcess:GhcModProcess;
+// Interface between VS Code extension and GHC-Mod api
+import { GhcMod } from './ghcMod';
+let ghcMod: GhcMod;
 
 // Create a collection for throttled delayers to
 // control the rate of calls to ghc-mod
@@ -34,11 +35,12 @@ documents.listen(connection);
 let workspaceRoot: string;
 connection.onInitialize((params): InitializeResult => {
     workspaceRoot = params.rootPath;
-    ghcModProcess = new GhcModProcess(connection)
+    ghcMod = new GhcMod(connection)
     return {
         capabilities: {
             // Tell the client that the server works in FULL text document sync mode
             textDocumentSync: documents.syncKind,
+            hoverProvider: true
         }
     }
 });
@@ -70,6 +72,17 @@ interface GhcModSettings {
 let maxNumberOfProblems: number;
 // The settings have changed. Is send on server activation
 // as well.
+
+connection.onHover((documentInfo) => {
+    var document = documents.get(documentInfo.uri);
+    return ghcMod.getType(documents.get(documentInfo.uri), documentInfo).then((line) => {
+        var hover: Hover = {
+            contents: line,
+        }
+        return hover;
+    });
+});
+
 connection.onDidChangeConfiguration((change) => {
     let settings = <Settings>change.settings;
     maxNumberOfProblems = settings.ghcMod.maxNumberOfProblems || 100;
@@ -77,37 +90,15 @@ connection.onDidChangeConfiguration((change) => {
     documents.all().forEach(ghcCheck);
 });
 
-function ghcCheck(document:ITextDocument): Promise<void> {
+function ghcCheck(document: ITextDocument): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-        ghcModProcess.runGhcModCommand(<GhcModOpts>{ command: 'check', text: document.getText(), uri: document.uri })
-        .then((lines) => {
-            connection.sendDiagnostics({uri: document.uri, diagnostics: getCheckDiagnostics(lines)});
+        ghcMod.doCheck(document).then((diagnostics) => {
+            connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics.slice(0, maxNumberOfProblems) });
             resolve();
         }, (err) => {
             reject(new Error(err));
         });
     });
-}
-
-
-function getCheckDiagnostics(lines: string[]): Diagnostic[] {
-        let diagnostics: Diagnostic[] = [];
-        let problems = 0;
-        for (var i = 0; i < lines.length && problems < maxNumberOfProblems; i++) {
-            let line = lines[i];
-            let match = line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/);
-            if (match) {
-                diagnostics.push({
-                    severity: match[4] === "Warning" ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
-                    range: {
-                        start: { line: parseInt(match[2]) - 1, character: parseInt(match[3]) - 1},
-                        end: { line: parseInt(match[2]) - 1, character: parseInt(match[3]) - 1}
-                    },
-                    message: line.replace(match[0], '')  
-                });
-            }
-        }
-        return diagnostics;
 }
 
 // Unused for now, but this might need changed when
