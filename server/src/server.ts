@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Copyright (c) Cody Hoover. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 'use strict';
@@ -7,17 +7,16 @@
 import {
     IPCMessageReader, IPCMessageWriter,
     createConnection, IConnection, TextDocumentSyncKind,
-    TextDocuments, ITextDocument, Diagnostic, DiagnosticSeverity, InitializeResult, Hover
+    TextDocuments, ITextDocument, Diagnostic, DiagnosticSeverity, InitializeResult
 } from 'vscode-languageserver';
 
+import {GhcModOpts, GhcModProcess} from './ghcModProcess';
+let ghcModProcess:GhcModProcess;
+
+// Create a collection for throttled delayers to
+// control the rate of calls to ghc-mod
 import { ThrottledDelayer } from './utils/async';
 let delayers: { [key: string]: ThrottledDelayer<void> } = Object.create(null);
-
-import {EOL} from 'os'
-let EOT = EOL + '\x04' + EOL
-
-import * as cp from 'child_process';
-let childProcess: cp.ChildProcess = null;
 
 // Create a connection for the server. The connection uses 
 // stdin / stdout for message passing
@@ -35,6 +34,7 @@ documents.listen(connection);
 let workspaceRoot: string;
 connection.onInitialize((params): InitializeResult => {
     workspaceRoot = params.rootPath;
+    ghcModProcess = new GhcModProcess(connection)
     return {
         capabilities: {
             // Tell the client that the server works in FULL text document sync mode
@@ -52,7 +52,6 @@ documents.onDidChangeContent((change) => {
         delayer = new ThrottledDelayer<void>(250);
         delayers[key] = delayer;
     }
-    // delayer.trigger(() => validateTextDocument(change.document));
     delayer.trigger(() => ghcCheck(change.document));
 });
 
@@ -78,16 +77,9 @@ connection.onDidChangeConfiguration((change) => {
     documents.all().forEach(ghcCheck);
 });
 
-interface GhcModOpts {
-    command: string,
-    text?: string,
-    uri?: string, // Might need normalized in the future via getNormalizedUri()
-    args?: string[]
-}
-
 function ghcCheck(document:ITextDocument): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-        runGhcModCommand(<GhcModOpts>{ command: 'check', text: document.getText(), uri: document.uri })
+        ghcModProcess.runGhcModCommand(<GhcModOpts>{ command: 'check', text: document.getText(), uri: document.uri })
         .then((lines) => {
             connection.sendDiagnostics({uri: document.uri, diagnostics: getCheckDiagnostics(lines)});
             resolve();
@@ -97,89 +89,6 @@ function ghcCheck(document:ITextDocument): Promise<void> {
     });
 }
 
-function runGhcModCommand(options: GhcModOpts): Promise<string[]> {
-    let process = spawnProcess();
-    if (!process) {
-        connection.console.log('Process could not be spawned');
-        return null;
-    }
-
-    let promise = Promise.resolve();
-
-    return promise.then(() => {
-        if (options.text) {
-            return interact(process, `map-file ${options.uri}${EOL}${options.text}${EOT}`); 
-        }
-    }).then(() => {
-        let cmd = [];
-        if (options.uri) {
-            cmd = [options.command, options.uri].concat(options.args);
-        } else {
-            cmd = [options.command].concat(options.args);
-        }
-        return interact(process, cmd.join(' ').replace(EOL, ' ') + EOL);
-    }).then((res) => {
-        if (options.text) {
-            interact(process, `unmap-file ${options.uri}${EOL}`).then(() => { return res });
-        }
-        return res;
-    }, (err) => {
-        return [];
-    });
-}
-
-function waitForAnswer(process, command): Promise<string[]> {
-    return new Promise((resolve, reject) => {
-        let savedLines = [], timer = null;
-        let cleanup = () => {
-            process.stdout.removeListener('data', parseData);
-            process.stderr.removeListener('data', parseError);
-            process.removeListener('exit', exitCallback);
-            clearTimeout(timer);
-        }
-        let parseError = (data) => {
-            connection.console.log(data);
-        }
-        let parseData = (data) => {
-            let lines = data.toString().split(EOL);
-            savedLines = savedLines.concat(lines);
-            let result = savedLines[savedLines.length - 2];
-            if (result === 'OK') {
-                cleanup();
-                lines = savedLines.slice(0, -2);
-                resolve(lines.map((line) => {
-                    return line.replace(/\0/g, EOL);
-                }));
-            }
-        }
-        let exitCallback = () => {
-            cleanup();
-            reject(`ghc-modi crashed on command ${command} with message ${savedLines}`);
-        }
-        process.stdout.on('data', parseData);
-        process.on('exit', exitCallback);
-        process.stderr.on('data', parseError);
-        timer = setTimeout(() => {
-            cleanup();
-            connection.console.log(`Timeout on ghc-modi command ${command}; message so far: ${savedLines}`);
-        }, 60000);
-    });
-}
-
-function interact(process: cp.ChildProcess, command: string): Promise<string[]> {
-    let resultP = waitForAnswer(process, command);
-    process.stdin.write(command)
-    return resultP
-}
-
-function spawnProcess(): cp.ChildProcess {
-    if (childProcess) {
-        return childProcess;
-    }
-    childProcess = cp.spawn('ghc-mod', ['legacy-interactive']);    
-    childProcess.on('exit', () => childProcess = null);
-    return childProcess;
-}
 
 function getCheckDiagnostics(lines: string[]): Diagnostic[] {
         let diagnostics: Diagnostic[] = [];

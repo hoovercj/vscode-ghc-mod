@@ -19,7 +19,7 @@ After running the extension as explained above, press `F5` in a seperate instanc
 - `ghc-mod check`
 
 ## Next steps
-The extension is based heavily on the [ghc-mod package][ghc-mod-atom] for atom. Currently everything is smashed into the main `server.ts` file but should be extracted as in the atom package. Then additional ghc-mod commands can be added.
+The extension is based heavily on the [ghc-mod package][ghc-mod-atom] for atom. The file `ghcModProcess.ts` serves as a wrapper for a childProcess which can be issued ghc-mod commands. Currently everything else is smashed into the main `server.ts` but should be changed to reflect the better organization of the atom package.
 
 [example-server-docs]: https://code.visualstudio.com/docs/extensions/example-language-server
 [ghc-mod-instructions]: http://www.mew.org/~kazu/proj/ghc-mod/en/install.html
