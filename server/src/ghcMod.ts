@@ -54,6 +54,10 @@ export class GhcMod {
         });
     }
     
+    public shutdown() {
+        this.ghcModProcess.killProcess();
+    }
+    
     // PRIVATE METHODS
     private getCheckDiagnostics(lines: string[]): Diagnostic[] {
         let diagnostics: Diagnostic[] = [];

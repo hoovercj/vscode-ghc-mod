@@ -56,6 +56,15 @@ export class GhcModProcess {
         });
     }
 
+    public killProcess():void {
+        if (this.childProcess) {
+            if (this.childProcess.stdin) {
+                this.childProcess.stdin.end();
+            }
+            this.childProcess.kill();
+            this.childProcess = null;
+        }
+    }
     
     private waitForAnswer(process, command): Promise<string[]> {
         return new Promise((resolve, reject) => {

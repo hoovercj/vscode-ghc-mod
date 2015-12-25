@@ -90,6 +90,10 @@ connection.onDidChangeConfiguration((change) => {
     documents.all().forEach(ghcCheck);
 });
 
+connection.onShutdown(() => {
+    ghcMod.shutdown();
+})
+
 function ghcCheck(document: ITextDocument): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         ghcMod.doCheck(document).then((diagnostics) => {
