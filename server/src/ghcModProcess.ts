@@ -5,7 +5,7 @@
 import * as cp from 'child_process';
 import {EOL} from 'os'
 import {
-    IConnection
+    RemoteConsole
 } from 'vscode-languageserver';
 
 export interface GhcModOpts {
@@ -19,16 +19,16 @@ export class GhcModProcess {
 
     private EOT = EOL + '\x04' + EOL;
     private childProcess:cp.ChildProcess;
-    private connection:IConnection;
+    private logger:RemoteConsole;
     
-    constructor(connection:IConnection) {
-        this.connection = connection;
+    constructor(logger:RemoteConsole) {
+        this.logger = logger;
     }
-   
     public runGhcModCommand(options: GhcModOpts): Promise<string[]> {
         let process = this.spawnProcess();
         if (!process) {
-            this.connection.console.log('Process could not be spawned');
+            this.logger.log('Process could not be spawned');
+            
             return null;
         }
 
@@ -76,7 +76,7 @@ export class GhcModProcess {
                 clearTimeout(timer);
             }
             let parseError = (data) => {
-                this.connection.console.log(data);
+                this.logger.log(data);
             }
             let parseData = (data) => {
                 let lines = data.toString().split(EOL);
@@ -99,7 +99,7 @@ export class GhcModProcess {
             process.stderr.on('data', parseError);
             timer = setTimeout(() => {
                 cleanup();
-                this.connection.console.log(`Timeout on ghc-modi command ${command}; message so far: ${savedLines}`);
+                this.logger.log(`Timeout on ghc-modi command ${command}; message so far: ${savedLines}`);
             }, 60000);
         });
     }

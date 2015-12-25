@@ -6,15 +6,15 @@
 
 import {GhcModOpts, GhcModProcess} from './ghcModProcess';
 import {
-    IConnection, ITextDocument, TextDocumentPosition, Diagnostic, DiagnosticSeverity, Range
+    RemoteConsole, ITextDocument, TextDocumentPosition, Diagnostic, DiagnosticSeverity, Range
 } from 'vscode-languageserver';
 
 export class GhcMod {
     private ghcModProcess:GhcModProcess;
     private maxNumberOfProblems = 100;
     
-    constructor(connection:IConnection) {
-        this.ghcModProcess = new GhcModProcess(connection);
+    constructor(logger:RemoteConsole) {
+        this.ghcModProcess = new GhcModProcess(logger);
     }
     
     // GHC-MOD COMMANDS
