@@ -76,7 +76,7 @@ export class GhcModProcess {
                 clearTimeout(timer);
             }
             // let parseError = (data) => {
-            //     this.logger.log(data);
+            //     this.logger.log(data.toString());
             // }
             let parseData = (data) => {
                 let lines = data.toString().split(EOL);
