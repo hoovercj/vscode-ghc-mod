@@ -7,7 +7,7 @@
 import {
 IPCMessageReader, IPCMessageWriter,
 createConnection, IConnection, TextDocumentSyncKind,
-TextDocuments, ITextDocument, Diagnostic, DiagnosticSeverity, InitializeResult, Hover
+TextDocuments, ITextDocument, Position, Diagnostic, DiagnosticSeverity, InitializeResult, Hover
 } from 'vscode-languageserver';
 
 // Interface between VS Code extension and GHC-Mod api
@@ -48,13 +48,15 @@ connection.onInitialize((params): InitializeResult => {
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
-    let key = change.document.uri.toString();
-    let delayer = delayers[key];
-    if (!delayer) {
-        delayer = new ThrottledDelayer<void>(250);
-        delayers[key] = delayer;
-    }
-    delayer.trigger(() => ghcCheck(change.document));
+    ghcCheck(change.document);    
+    // let key = change.document.uri.toString();
+    // let delayer = delayers[key];
+    // if (!delayer) {
+    //     delayer = new ThrottledDelayer<void>(250);
+    //     delayers[key] = delayer;
+    // }
+    // // delayer.trigger(() => ghcCheck(change.document));
+
 });
 
 // The settings interface describe the server relevant settings part
@@ -74,12 +76,10 @@ let maxNumberOfProblems: number;
 // as well.
 
 connection.onHover((documentInfo) => {
-    var document = documents.get(documentInfo.uri);
-    return ghcMod.getType(documents.get(documentInfo.uri), documentInfo).then((line) => {
-        var hover: Hover = {
-            contents: line,
+    return getInfoOrTypeTooltip(documents.get(documentInfo.uri), documentInfo.position).then((tooltip) => {        
+        return <Hover> {
+            contents: tooltip
         }
-        return hover;
     });
 });
 
@@ -91,8 +91,19 @@ connection.onDidChangeConfiguration((change) => {
 });
 
 connection.onShutdown(() => {
+    // TODO add logging
     ghcMod.shutdown();
 })
+
+function getInfoOrTypeTooltip(document:ITextDocument, position:Position): Promise<string> {
+    return ghcMod.getInfo(document, position).then((tooltip) => {
+        if (tooltip) { 
+            return tooltip;
+        } else {
+            return ghcMod.getType(document, position);
+        }
+    });
+}
 
 function ghcCheck(document: ITextDocument): Promise<void> {
     return new Promise<void>((resolve, reject) => {

@@ -71,13 +71,13 @@ export class GhcModProcess {
             let savedLines = [], timer = null;
             let cleanup = () => {
                 process.stdout.removeListener('data', parseData);
-                process.stderr.removeListener('data', parseError);
+                // process.stderr.removeListener('data', parseError);
                 process.removeListener('exit', exitCallback);
                 clearTimeout(timer);
             }
-            let parseError = (data) => {
-                this.logger.log(data);
-            }
+            // let parseError = (data) => {
+            //     this.logger.log(data);
+            // }
             let parseData = (data) => {
                 let lines = data.toString().split(EOL);
                 savedLines = savedLines.concat(lines);
@@ -96,7 +96,7 @@ export class GhcModProcess {
             }
             process.stdout.on('data', parseData);
             process.on('exit', exitCallback);
-            process.stderr.on('data', parseError);
+            // process.stderr.on('data', parseError);
             timer = setTimeout(() => {
                 cleanup();
                 this.logger.log(`Timeout on ghc-modi command ${command}; message so far: ${savedLines}`);
