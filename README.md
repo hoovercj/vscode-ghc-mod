@@ -20,10 +20,14 @@ There are three main components with distinct responsibilities. `server.ts` is r
 
 ## Features
 - `ghc-mod check`
+- `ghc-mod info`
 - `ghc-mod type`
 
 ## Next steps
-The extension is based heavily on the [ghc-mod package][ghc-mod-atom] for atom. The file `ghcModProcess.ts` serves as a wrapper for a childProcess which can be issued ghc-mod commands. Currently everything else is smashed into the main `server.ts` but should be changed to reflect the better organization of the atom package.
+- Verify that the current `ThrottledDelayer` method for handling onHover is sufficient.
+- Add new commands
+- Add configuration
+- Add completion backend
 
 [example-server-docs]: https://code.visualstudio.com/docs/extensions/example-language-server
 [ghc-mod-instructions]: http://www.mew.org/~kazu/proj/ghc-mod/en/install.html

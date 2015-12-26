@@ -97,8 +97,6 @@ export class GhcMod {
         return delayer.trigger(() => this.ghcModProcess.runGhcModCommand(options), delay).then((lines) => {
             return lines
         });
-        //return delayer.trigger(() => { return this.ghcModProcess.runGhcModCommand(options)});
-
     }
     
     private getCheckDiagnostics(lines: string[]): Diagnostic[] {
