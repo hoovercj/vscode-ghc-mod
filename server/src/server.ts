@@ -14,11 +14,10 @@ TextDocuments, ITextDocument, Position, Diagnostic, DiagnosticSeverity, Initiali
 import { GhcMod } from './ghcMod';
 let ghcMod: GhcMod;
 
-// Create a collection for throttled delayers to
-// control the rate of calls to ghc-mod
+// Use throttled delayers to control the rate of calls to ghc-mod
 import { ThrottledDelayer } from './utils/async';
 let documentChangedDelayers: { [key: string]: ThrottledDelayer<void> } = Object.create(null);
-let hoverDelayer = new ThrottledDelayer<string>(250);
+let hoverDelayer = new ThrottledDelayer<Hover>(100);
 
 // Create a connection for the server. The connection uses 
 // stdin / stdout for message passing
@@ -48,8 +47,11 @@ connection.onInitialize((params): InitializeResult => {
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
+// This event will fire for every key press, but the use of delayers 
+// here means that ghcCheck will only be called ONCE for a file after
+// the delay period with the most recent set of information. It does
+// NOT serve as a queue.
 documents.onDidChangeContent((change) => {
-    // ghcCheck(change.document);    
     let key = change.document.uri.toString();
     let delayer = documentChangedDelayers[key];
     if (!delayer) {
@@ -74,15 +76,6 @@ interface GhcModSettings {
 let maxNumberOfProblems: number;
 // The settings have changed. Is send on server activation
 // as well.
-
-connection.onHover((documentInfo) => {
-    return getInfoOrTypeTooltip(documents.get(documentInfo.uri), documentInfo.position).then((tooltip) => {        
-        return <Hover> {
-            contents: tooltip
-        }
-    });
-});
-
 connection.onDidChangeConfiguration((change) => {
     let settings = <Settings>change.settings;
     maxNumberOfProblems = settings.ghcMod.maxNumberOfProblems || 100;
@@ -90,14 +83,32 @@ connection.onDidChangeConfiguration((change) => {
     documents.all().forEach(ghcCheck);
 });
 
+// onHover can sometimes be called once and sometimes be called
+// multiple times in quick succession so a delayer is used here
+// as well. Unlike above, it wouldn't make sense to use a unique
+// delayer per file as only the most recent hover event matters.
+connection.onHover((documentInfo) => {
+    return hoverDelayer.trigger(() => { 
+        return getInfoOrTypeTooltip(documents.get(documentInfo.uri), documentInfo.position)
+    }).then((hover) => { return hover; })
+});
+
+
 connection.onShutdown(() => {
     // TODO add logging
     ghcMod.shutdown();
 })
 
-function getInfoOrTypeTooltip(document:ITextDocument, position:Position): Promise<string> {
-    return ghcMod.getInfoOrType(document, position).then((tooltip) => {
-        return tooltip;
+function getInfoOrTypeTooltip(document:ITextDocument, position:Position): Promise<Hover> {
+    return ghcMod.getType(document, position)
+    .then((typeTooltip) => {
+        return ghcMod.getInfo(document, position).then((infoTooltip) => {
+            return infoTooltip ? infoTooltip : typeTooltip;
+        });
+    }).then((tooltip) => {
+       return <Hover> {
+           contents: tooltip
+       };
     });
 }
 

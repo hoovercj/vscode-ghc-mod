@@ -30,12 +30,13 @@ export class GhcMod {
             command: 'check',
             text: document.getText(),
             uri: document.uri
-        }).then((lines) => {
-            return this.getCheckDiagnostics(lines);
+        }).then((ghcModResults) => {
+            return this.getCheckDiagnostics(ghcModResults.results);
         });
     }
     
     public getInfoOrType(document:ITextDocument, position:Position):Promise<string> {
+        // if (false) {
         if (this.getWordAtPosition(document, position)) {
             return this.getInfo(document, position);
         } else {
@@ -43,16 +44,16 @@ export class GhcMod {
         }
     }
     
-    private getType(document:ITextDocument, position:Position):Promise<string> {
-        this.logger.log('GetType: ' + this.getWordAtPosition(document, position));
+    public getType(document:ITextDocument, position:Position):Promise<string> {
+        // this.logger.log('GetType: ' + this.getWordAtPosition(document, position));
         return this.ghcModProcess.runGhcModCommand(<GhcModOpts> {
             command: 'type',
             text: document.getText(),
             uri: document.uri,
             args: [(position.line + 1).toString(), (position.character + 1).toString()]
-        }).then((lines) => {
-            return lines.reduce((acc, line) => {
-               this.logger.log('TypeLine: ' + line);
+        }).then((ghcModResults) => {
+            return ghcModResults.results.reduce((acc, line) => {
+            //    this.logger.log('TypeLine: ' + line);
                if (acc != '') {
                    return acc
                }
@@ -77,21 +78,23 @@ export class GhcMod {
         });
     }
     
-    // TODO: Sometimes the getType results are being handled in the getInfo path
-    private getInfo(document:ITextDocument, position:Position):Promise<string> {
+    // TODO: if getInfo fails, getType also fails
+    public getInfo(document:ITextDocument, position:Position):Promise<string> {
         var word = this.getWordAtPosition(document, position);
         return this.ghcModProcess.runGhcModCommand(<GhcModOpts> {
             command: 'info',
             text: document.getText(),
             uri: document.uri,
             args: [this.getWordAtPosition(document, position)]
-        }).then((lines) => {
+        }).then((ghcModResults) => {
+            let lines = ghcModResults.results;
             var tooltip = lines.join('\n');
-            if (tooltip.indexOf('Cannot show info') != -1) {
-                this.logger.log('Info failed, get Type');
-                return this.getType(document, position)
-            } else {
+            if (tooltip.indexOf('Cannot show info') == -1) {
                 return tooltip;
+            } else {
+                // this.logger.log('Info failed, get Type');
+                return '';
+                // return this.getType(document, position).then((tooltip) => { return tooltip; });
             }
         });
     }
