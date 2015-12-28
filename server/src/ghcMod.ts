@@ -17,14 +17,16 @@ import { EOL } from 'os';
 export class GhcMod {
     private ghcModProcess:GhcModProcess;
     private maxNumberOfProblems = 100;
+    private logger:RemoteConsole;
     
     constructor(logger:RemoteConsole) {
+        this.logger = logger;
         this.ghcModProcess = new GhcModProcess(logger);
     }
     
     // GHC-MOD COMMANDS
     public doCheck(document):Promise<Diagnostic[]> {    
-        return this.queueCommand('checklint', <GhcModOpts>{
+        return this.ghcModProcess.runGhcModCommand(<GhcModOpts>{
             command: 'check',
             text: document.getText(),
             uri: document.uri
@@ -33,14 +35,24 @@ export class GhcMod {
         });
     }
     
-    public getType(document:ITextDocument, position:Position):Promise<string> {
-        return this.queueCommand('infotype', <GhcModOpts> {
+    public getInfoOrType(document:ITextDocument, position:Position):Promise<string> {
+        if (this.getWordAtPosition(document, position)) {
+            return this.getInfo(document, position);
+        } else {
+            return this.getType(document, position);
+        }
+    }
+    
+    private getType(document:ITextDocument, position:Position):Promise<string> {
+        this.logger.log('GetType: ' + this.getWordAtPosition(document, position));
+        return this.ghcModProcess.runGhcModCommand(<GhcModOpts> {
             command: 'type',
             text: document.getText(),
             uri: document.uri,
             args: [(position.line + 1).toString(), (position.character + 1).toString()]
         }).then((lines) => {
             return lines.reduce((acc, line) => {
+               this.logger.log('TypeLine: ' + line);
                if (acc != '') {
                    return acc
                }
@@ -59,23 +71,25 @@ export class GhcMod {
                var cursorCharacter = position.character;
                if (cursorLine < typeRange.start.line || cursorLine > typeRange.end.line || cursorCharacter < typeRange.start.character || cursorCharacter > typeRange.end.character) {
                    return acc;
-               }
+               }              
                return type;
-                
             }, '');
         });
     }
     
-    public getInfo(document:ITextDocument, position:Position):Promise<string> {
-        return this.queueCommand('infotype', <GhcModOpts> {
+    // TODO: Sometimes the getType results are being handled in the getInfo path
+    private getInfo(document:ITextDocument, position:Position):Promise<string> {
+        var word = this.getWordAtPosition(document, position);
+        return this.ghcModProcess.runGhcModCommand(<GhcModOpts> {
             command: 'info',
             text: document.getText(),
             uri: document.uri,
             args: [this.getWordAtPosition(document, position)]
         }).then((lines) => {
-            var tooltip = lines.join('').split(EOL)[0];
+            var tooltip = lines.join('\n');
             if (tooltip.indexOf('Cannot show info') != -1) {
-                return this.getType(document, position);
+                this.logger.log('Info failed, get Type');
+                return this.getType(document, position)
             } else {
                 return tooltip;
             }
@@ -86,19 +100,7 @@ export class GhcMod {
         this.ghcModProcess.killProcess();
     }
     
-    // PRIVATE METHODS
-    private queueCommand(queueName:string, options:GhcModOpts, delay: number = 250):Promise<string[]> {
-        let delayer = delayers[queueName];
-        if (!delayer) {
-            delayer = new ThrottledDelayer<string[]>(delay);
-            delayers[queueName] = delayer;
-        }
-        
-        return delayer.trigger(() => this.ghcModProcess.runGhcModCommand(options), delay).then((lines) => {
-            return lines
-        });
-    }
-    
+    // PRIVATE METHODS    
     private getCheckDiagnostics(lines: string[]): Diagnostic[] {
         let diagnostics: Diagnostic[] = [];
         let problems = 0;
@@ -115,12 +117,12 @@ export class GhcMod {
                 });
             }
         });
-        return diagnostics;
+        return diagnostics.slice(0, this.maxNumberOfProblems);
     }
     
-    private getWordAtPosition(document:ITextDocument, position:Position):string {
+    public getWordAtPosition(document:ITextDocument, position:Position):string {
         var line = document.getText().split('\n')[position.line];
-        var startPosition = line.lastIndexOf(' ', position.line);
+        var startPosition = line.lastIndexOf(' ', position.character) + 1;
         if (startPosition < 0) {
             startPosition = 0;
         }
@@ -129,7 +131,8 @@ export class GhcMod {
         if (endPosition < 0) {
             endPosition = line.length;
         }
-        
-        return line.slice(startPosition, endPosition);
+        var ret = line.slice(startPosition, endPosition);
+        // this.logger.log(`Word at ${position.line},${position.character} = "${ret}"`);
+        return ret;
     }
 }

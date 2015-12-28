@@ -8,6 +8,8 @@ import {
     RemoteConsole
 } from 'vscode-languageserver';
 
+let Queue = require('promise-queue');
+
 export interface GhcModOpts {
     command: string,
     text?: string,
@@ -20,15 +22,26 @@ export class GhcModProcess {
     private EOT = EOL + '\x04' + EOL;
     private childProcess:cp.ChildProcess;
     private logger:RemoteConsole;
+    private queue = new Queue(1);
     
     constructor(logger:RemoteConsole) {
         this.logger = logger;
     }
+    
     public runGhcModCommand(options: GhcModOpts): Promise<string[]> {
+        this.logger.log('Queue: ' + options.command + ' - ' + (options.args ? options.args.join(' ') : ''));
+        return this.queue.add(() => { 
+            return new Promise((resolve, reject) => {
+                resolve(this.runGhcModCommand_(options))
+            })
+        });
+    }
+    
+    public runGhcModCommand_(options: GhcModOpts): Promise<string[]> {
+        this.logger.log('Start: ' + options.command);
         let process = this.spawnProcess();
         if (!process) {
             this.logger.log('Process could not be spawned');
-            
             return null;
         }
 
@@ -45,8 +58,10 @@ export class GhcModProcess {
             } else {
                 cmd = [options.command].concat(options.args);
             }
+            this.logger.log("Execute: " + cmd.join(' '))
             return this.interact(process, cmd.join(' ').replace(EOL, ' ') + EOL);
         }).then((res) => {
+            this.logger.log('End: ' + options.command + ' - ' + res.join('\n'));
             if (options.text) {
                 this.interact(process, `unmap-file ${options.uri}${EOL}`).then(() => { return res });
             }
@@ -71,13 +86,9 @@ export class GhcModProcess {
             let savedLines = [], timer = null;
             let cleanup = () => {
                 process.stdout.removeListener('data', parseData);
-                // process.stderr.removeListener('data', parseError);
                 process.removeListener('exit', exitCallback);
                 clearTimeout(timer);
             }
-            // let parseError = (data) => {
-            //     this.logger.log(data);
-            // }
             let parseData = (data) => {
                 let lines = data.toString().split(EOL);
                 savedLines = savedLines.concat(lines);
@@ -115,7 +126,12 @@ export class GhcModProcess {
             return this.childProcess;
         }
         this.childProcess = cp.spawn('ghc-mod', ['legacy-interactive']);    
+        
         this.childProcess.on('exit', () => this.childProcess = null);
+        this.childProcess.stderr.on('data', (data) => {
+            // this.logger.log('Error: ' + data.toString());
+        });
+        this.childProcess.stdout.setEncoding('utf-8');        
         return this.childProcess;
     }
 }

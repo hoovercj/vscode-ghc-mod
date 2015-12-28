@@ -17,7 +17,8 @@ let ghcMod: GhcMod;
 // Create a collection for throttled delayers to
 // control the rate of calls to ghc-mod
 import { ThrottledDelayer } from './utils/async';
-let delayers: { [key: string]: ThrottledDelayer<void> } = Object.create(null);
+let documentChangedDelayers: { [key: string]: ThrottledDelayer<void> } = Object.create(null);
+let hoverDelayer = new ThrottledDelayer<string>(250);
 
 // Create a connection for the server. The connection uses 
 // stdin / stdout for message passing
@@ -48,15 +49,14 @@ connection.onInitialize((params): InitializeResult => {
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
-    ghcCheck(change.document);    
-    // let key = change.document.uri.toString();
-    // let delayer = delayers[key];
-    // if (!delayer) {
-    //     delayer = new ThrottledDelayer<void>(250);
-    //     delayers[key] = delayer;
-    // }
-    // // delayer.trigger(() => ghcCheck(change.document));
-
+    // ghcCheck(change.document);    
+    let key = change.document.uri.toString();
+    let delayer = documentChangedDelayers[key];
+    if (!delayer) {
+        delayer = new ThrottledDelayer<void>(250);
+        documentChangedDelayers[key] = delayer;
+    }
+    delayer.trigger(() => ghcCheck(change.document));
 });
 
 // The settings interface describe the server relevant settings part
@@ -96,12 +96,8 @@ connection.onShutdown(() => {
 })
 
 function getInfoOrTypeTooltip(document:ITextDocument, position:Position): Promise<string> {
-    return ghcMod.getInfo(document, position).then((tooltip) => {
-        if (tooltip) { 
-            return tooltip;
-        } else {
-            return ghcMod.getType(document, position);
-        }
+    return ghcMod.getInfoOrType(document, position).then((tooltip) => {
+        return tooltip;
     });
 }
 
