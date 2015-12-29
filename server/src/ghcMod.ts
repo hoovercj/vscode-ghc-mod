@@ -9,14 +9,8 @@ import {
     RemoteConsole, ITextDocument, Diagnostic, DiagnosticSeverity, Range, Position
 } from 'vscode-languageserver';
 
-import { ThrottledDelayer } from './utils/async';
-let delayers: { [key: string]: ThrottledDelayer<string[]> } = Object.create(null);
-
-import { EOL } from 'os';
-
 export class GhcMod {
     private ghcModProcess:GhcModProcess;
-    private maxNumberOfProblems = 100;
     private logger:RemoteConsole;
     
     constructor(logger:RemoteConsole) {
@@ -30,30 +24,19 @@ export class GhcMod {
             command: 'check',
             text: document.getText(),
             uri: document.uri
-        }).then((ghcModResults) => {
-            return this.getCheckDiagnostics(ghcModResults.results);
+        }).then((lines) => {
+            return this.getCheckDiagnostics(lines);
         });
     }
     
-    public getInfoOrType(document:ITextDocument, position:Position):Promise<string> {
-        // if (false) {
-        if (this.getWordAtPosition(document, position)) {
-            return this.getInfo(document, position);
-        } else {
-            return this.getType(document, position);
-        }
-    }
-    
     public getType(document:ITextDocument, position:Position):Promise<string> {
-        // this.logger.log('GetType: ' + this.getWordAtPosition(document, position));
         return this.ghcModProcess.runGhcModCommand(<GhcModOpts> {
             command: 'type',
             text: document.getText(),
             uri: document.uri,
             args: [(position.line + 1).toString(), (position.character + 1).toString()]
-        }).then((ghcModResults) => {
-            return ghcModResults.results.reduce((acc, line) => {
-            //    this.logger.log('TypeLine: ' + line);
+        }).then((lines) => {
+            return lines.reduce((acc, line) => {
                if (acc != '') {
                    return acc
                }
@@ -78,7 +61,6 @@ export class GhcMod {
         });
     }
     
-    // TODO: if getInfo fails, getType also fails
     public getInfo(document:ITextDocument, position:Position):Promise<string> {
         var word = this.getWordAtPosition(document, position);
         return this.ghcModProcess.runGhcModCommand(<GhcModOpts> {
@@ -86,15 +68,12 @@ export class GhcMod {
             text: document.getText(),
             uri: document.uri,
             args: [this.getWordAtPosition(document, position)]
-        }).then((ghcModResults) => {
-            let lines = ghcModResults.results;
+        }).then((lines) => {
             var tooltip = lines.join('\n');
             if (tooltip.indexOf('Cannot show info') == -1) {
                 return tooltip;
             } else {
-                // this.logger.log('Info failed, get Type');
                 return '';
-                // return this.getType(document, position).then((tooltip) => { return tooltip; });
             }
         });
     }
@@ -120,22 +99,20 @@ export class GhcMod {
                 });
             }
         });
-        return diagnostics.slice(0, this.maxNumberOfProblems);
+        return diagnostics;
     }
     
-    public getWordAtPosition(document:ITextDocument, position:Position):string {
+    private getWordAtPosition(document:ITextDocument, position:Position):string {
         var line = document.getText().split('\n')[position.line];
         var startPosition = line.lastIndexOf(' ', position.character) + 1;
         if (startPosition < 0) {
             startPosition = 0;
         }
-        
         var endPosition = line.indexOf(' ', position.character);
         if (endPosition < 0) {
             endPosition = line.length;
         }
         var ret = line.slice(startPosition, endPosition);
-        // this.logger.log(`Word at ${position.line},${position.character} = "${ret}"`);
         return ret;
     }
 }

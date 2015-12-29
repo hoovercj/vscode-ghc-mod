@@ -17,11 +17,6 @@ export interface GhcModOpts {
     args?: string[]
 }
 
-export interface GhcModResults {
-    options: GhcModOpts,
-    results: string[]   
-}
-
 export class GhcModProcess {    
 
     private EOT = EOL + '\x04' + EOL;
@@ -33,8 +28,7 @@ export class GhcModProcess {
         this.logger = logger;
     }
     
-    public runGhcModCommand(options: GhcModOpts): Promise<GhcModResults> {
-        // this.logger.log('Queue: ' + options.command + ' - ' + (options.args ? options.args.join(' ') : ''));
+    public runGhcModCommand(options: GhcModOpts): Promise<string[]> {
         return this.queue.add(() => { 
             return new Promise((resolve, reject) => {
                 resolve(this.runGhcModCommand_(options))
@@ -42,17 +36,19 @@ export class GhcModProcess {
         });
     }
     
-    public runGhcModCommand_(options: GhcModOpts): Promise<GhcModResults> {
-        this.logger.log('Start: ' + options.command);
+    public runGhcModCommand_(options: GhcModOpts): Promise<string[]> {
         let process = this.spawnProcess();
         if (!process) {
             this.logger.log('Process could not be spawned');
+            // TODO: notify user of issue
             return null;
         }
 
         let promise = Promise.resolve();
 
         return promise.then(() => {
+            // options.text represents the haskell file relevant to the command
+            // In case it has not been saved, map the file to the text first
             if (options.text) {
                 return this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`); 
             }
@@ -63,22 +59,14 @@ export class GhcModProcess {
             } else {
                 cmd = [options.command].concat(options.args);
             }
-            this.logger.log("Execute: " + cmd.join(' '))
             return this.interact(process, cmd.join(' ').replace(EOL, ' ') + EOL);
         }).then((res) => {
-            this.logger.log('End: ' + options.command + ' - ' + res.join('\n'));
             if (options.text) {
                 return this.interact(process, `unmap-file ${options.uri}${EOL}`).then(() => {
-                    return <GhcModResults>{
-                        options: options,
-                        results: res
-                    };
+                    return res
                 });
             } else {
-                return <GhcModResults>{
-                    options: options,
-                    results: res
-                };
+                return res;
             }
         }, (err) => {
             this.logger.error('ERROR: RunGhcMod -' + err);
@@ -95,26 +83,15 @@ export class GhcModProcess {
         }
     }
     
-    private logInfo(command:string, prefix:string, message:string = '') {
-        if (command.indexOf('map-file') === -1) {
-            this.logger.log(`${prefix} ${command}: ${message}`);
-        } else {
-            this.logger.log(`${prefix} (un)map-file`);
-        }
-    }
-    
     private waitForAnswer(process, command): Promise<string[]> {
         return new Promise((resolve, reject) => {
             let savedLines = [], timer = null;
             let cleanup = () => {
-                this.logInfo(command, 'cleanup')
                 process.stdout.removeListener('data', parseData);
                 process.removeListener('exit', exitCallback);
                 clearTimeout(timer);
             }
             let parseData = (data) => {
-                this.logInfo(command, 'stdout',data.toString());
-                
                 let lines = data.toString().split(EOL);
                 savedLines = savedLines.concat(lines);
                 let result = savedLines[savedLines.length - 2];
@@ -132,7 +109,6 @@ export class GhcModProcess {
             }
             process.stdout.on('data', parseData);
             process.on('exit', exitCallback);
-            // process.stderr.on('data', parseError);
             timer = setTimeout(() => {
                 cleanup();
                 this.logger.log(`Timeout on ghc-modi command ${command}; message so far: ${savedLines}`);
@@ -142,7 +118,6 @@ export class GhcModProcess {
 
     private interact(process: cp.ChildProcess, command: string): Promise<string[]> {
         let resultP = this.waitForAnswer(process, command);
-        this.logInfo(command, 'stdin');
         process.stdin.write(command)
         return resultP
     }
@@ -152,9 +127,9 @@ export class GhcModProcess {
             return this.childProcess;
         }
         this.childProcess = cp.spawn('ghc-mod', ['legacy-interactive']);    
-        
         this.childProcess.on('exit', () => this.childProcess = null);
         this.childProcess.stderr.on('data', (data) => {
+            // TODO: allow this to be configurable.
             // this.logger.log('Error: ' + data.toString());
         });
         this.childProcess.stdout.setEncoding('utf-8');        

@@ -5,9 +5,11 @@
 'use strict';
 
 import {
-IPCMessageReader, IPCMessageWriter,
-createConnection, IConnection, TextDocumentSyncKind,
-TextDocuments, ITextDocument, Position, Diagnostic, DiagnosticSeverity, InitializeResult, Hover
+    IPCMessageReader, IPCMessageWriter,
+    createConnection, IConnection,
+    TextDocuments, ITextDocument, Position,
+    Diagnostic, DiagnosticSeverity,
+    InitializeResult, Hover
 } from 'vscode-languageserver';
 
 // Interface between VS Code extension and GHC-Mod api
@@ -100,11 +102,13 @@ connection.onShutdown(() => {
 })
 
 function getInfoOrTypeTooltip(document:ITextDocument, position:Position): Promise<Hover> {
-    return ghcMod.getType(document, position)
-    .then((typeTooltip) => {
-        return ghcMod.getInfo(document, position).then((infoTooltip) => {
-            return infoTooltip ? infoTooltip : typeTooltip;
-        });
+    return ghcMod.getInfo(document, position)
+    .then((infoTooltip) => {
+        if (infoTooltip) {
+            return infoTooltip;
+        } else {
+            return ghcMod.getType(document, position);
+        }
     }).then((tooltip) => {
        return <Hover> {
            contents: tooltip
@@ -125,9 +129,9 @@ function ghcCheck(document: ITextDocument): Promise<void> {
 
 // Unused for now, but this might need changed when
 // using the more advanced ghc-mod options
-function getNormalizedUri(uri: string): string {
-    return uri.replace('file:///', '').replace('%3A', ':');
-}
+// function getNormalizedUri(uri: string): string {
+//     return uri.replace('file:///', '').replace('%3A', ':');
+// }
 
 /*
 // Currently unused language-server features
