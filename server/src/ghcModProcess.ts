@@ -3,39 +3,39 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 import * as cp from 'child_process';
-import {EOL} from 'os'
+import {EOL} from 'os';
 import {
     RemoteConsole
 } from 'vscode-languageserver';
 
-let Queue = require('promise-queue');
+let promiseQueue = require('promise-queue');
 
 export interface GhcModOpts {
-    command: string,
-    text?: string,
-    uri?: string, // Might need normalized in the future via getNormalizedUri()
-    args?: string[]
+    command: string;
+    text?: string;
+    uri?: string; // Might need normalized in the future via getNormalizedUri()
+    args?: string[];
 }
 
-export class GhcModProcess {    
+export class GhcModProcess {
 
-    private EOT = EOL + '\x04' + EOL;
-    private childProcess:cp.ChildProcess;
-    private logger:RemoteConsole;
-    private queue = new Queue(1);
-    
-    constructor(logger:RemoteConsole) {
+    private EOT: string = EOL + '\x04' + EOL;
+    private childProcess: cp.ChildProcess;
+    private logger: RemoteConsole;
+    private queue: any = new promiseQueue(1);
+
+    constructor(logger: RemoteConsole) {
         this.logger = logger;
     }
-    
+
     public runGhcModCommand(options: GhcModOpts): Promise<string[]> {
-        return this.queue.add(() => { 
+        return this.queue.add(() => {
             return new Promise((resolve, reject) => {
-                resolve(this.runGhcModCommand_(options))
-            })
+                resolve(this.runGhcModCommand_(options));
+            });
         });
     }
-    
+
     public runGhcModCommand_(options: GhcModOpts): Promise<string[]> {
         let process = this.spawnProcess();
         if (!process) {
@@ -50,7 +50,7 @@ export class GhcModProcess {
             // options.text represents the haskell file relevant to the command
             // In case it has not been saved, map the file to the text first
             if (options.text) {
-                return this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`); 
+                return this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
             }
         }).then(() => {
             let cmd = [];
@@ -63,7 +63,7 @@ export class GhcModProcess {
         }).then((res) => {
             if (options.text) {
                 return this.interact(process, `unmap-file ${options.uri}${EOL}`).then(() => {
-                    return res
+                    return res;
                 });
             } else {
                 return res;
@@ -73,7 +73,7 @@ export class GhcModProcess {
         });
     }
 
-    public killProcess():void {
+    public killProcess(): void {
         if (this.childProcess) {
             if (this.childProcess.stdin) {
                 this.childProcess.stdin.end();
@@ -82,7 +82,7 @@ export class GhcModProcess {
             this.childProcess = null;
         }
     }
-    
+
     private waitForAnswer(process, command): Promise<string[]> {
         return new Promise((resolve, reject) => {
             let savedLines = [], timer = null;
@@ -90,7 +90,7 @@ export class GhcModProcess {
                 process.stdout.removeListener('data', parseData);
                 process.removeListener('exit', exitCallback);
                 clearTimeout(timer);
-            }
+            };
             let parseData = (data) => {
                 let lines = data.toString().split(EOL);
                 savedLines = savedLines.concat(lines);
@@ -102,11 +102,11 @@ export class GhcModProcess {
                         return line.replace(/\0/g, EOL);
                     }));
                 }
-            }
+            };
             let exitCallback = () => {
                 cleanup();
-                reject(`ghc-modi crashed on command ${command} with message ${savedLines}`);
-            }
+                reject(`ghc-modi crashed on command ${command} with savedLines ${savedLines}`);
+            };
             process.stdout.on('data', parseData);
             process.on('exit', exitCallback);
             timer = setTimeout(() => {
@@ -118,21 +118,24 @@ export class GhcModProcess {
 
     private interact(process: cp.ChildProcess, command: string): Promise<string[]> {
         let resultP = this.waitForAnswer(process, command);
-        process.stdin.write(command)
-        return resultP
+        process.stdin.write(command);
+        return resultP;
     }
 
     private spawnProcess(): cp.ChildProcess {
         if (this.childProcess) {
             return this.childProcess;
         }
-        this.childProcess = cp.spawn('ghc-mod', ['legacy-interactive']);    
+        this.childProcess = cp.spawn('ghc-mod', ['legacy-interactive']);
         this.childProcess.on('exit', () => this.childProcess = null);
         this.childProcess.stderr.on('data', (data) => {
-            // TODO: allow this to be configurable.
-            // this.logger.log('Error: ' + data.toString());
+            // TODO:
+            // 1. Allow this to be configurable.
+            // 2. Present this information to user -- but how?
+            // https://github.com/hoovercj/vscode-ghc-mod/issues/5
+            this.logger.log('Error: ' + data.toString());
         });
-        this.childProcess.stdout.setEncoding('utf-8');        
+        this.childProcess.stdout.setEncoding('utf-8');
         return this.childProcess;
     }
 }

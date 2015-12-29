@@ -7,9 +7,8 @@
 import {
     IPCMessageReader, IPCMessageWriter,
     createConnection, IConnection,
-    TextDocuments, ITextDocument, Position,
-    Diagnostic, DiagnosticSeverity,
-    InitializeResult, Hover
+    TextDocuments, ITextDocument,
+    Position, InitializeResult, Hover
 } from 'vscode-languageserver';
 
 // Interface between VS Code extension and GHC-Mod api
@@ -19,7 +18,7 @@ let ghcMod: GhcMod;
 // Use throttled delayers to control the rate of calls to ghc-mod
 import { ThrottledDelayer } from './utils/async';
 let documentChangedDelayers: { [key: string]: ThrottledDelayer<void> } = Object.create(null);
-let hoverDelayer = new ThrottledDelayer<Hover>(100);
+let hoverDelayer: ThrottledDelayer<Hover> = new ThrottledDelayer<Hover>(100);
 
 // Create a connection for the server. The connection uses 
 // stdin / stdout for message passing
@@ -37,14 +36,14 @@ documents.listen(connection);
 let workspaceRoot: string;
 connection.onInitialize((params): InitializeResult => {
     workspaceRoot = params.rootPath;
-    ghcMod = new GhcMod(connection.console)
+    ghcMod = new GhcMod(connection.console);
     return {
         capabilities: {
             // Tell the client that the server works in FULL text document sync mode
-            textDocumentSync: documents.syncKind,
-            hoverProvider: true
+            hoverProvider: true,
+            textDocumentSync: documents.syncKind
         }
-    }
+    };
 });
 
 // The content of a text document has changed. This event is emitted
@@ -54,8 +53,8 @@ connection.onInitialize((params): InitializeResult => {
 // the delay period with the most recent set of information. It does
 // NOT serve as a queue.
 documents.onDidChangeContent((change) => {
-    let key = change.document.uri.toString();
-    let delayer = documentChangedDelayers[key];
+    let key: string = change.document.uri.toString();
+    let delayer: ThrottledDelayer<void> = documentChangedDelayers[key];
     if (!delayer) {
         delayer = new ThrottledDelayer<void>(250);
         documentChangedDelayers[key] = delayer;
@@ -79,7 +78,7 @@ let maxNumberOfProblems: number;
 // The settings have changed. Is send on server activation
 // as well.
 connection.onDidChangeConfiguration((change) => {
-    let settings = <Settings>change.settings;
+    let settings: Settings = change.settings;
     maxNumberOfProblems = settings.ghcMod.maxNumberOfProblems || 100;
     // Revalidate any open text documents
     documents.all().forEach(ghcCheck);
@@ -90,18 +89,17 @@ connection.onDidChangeConfiguration((change) => {
 // as well. Unlike above, it wouldn't make sense to use a unique
 // delayer per file as only the most recent hover event matters.
 connection.onHover((documentInfo) => {
-    return hoverDelayer.trigger(() => { 
-        return getInfoOrTypeTooltip(documents.get(documentInfo.uri), documentInfo.position)
-    }).then((hover) => { return hover; })
+    return hoverDelayer.trigger(() => {
+        return getInfoOrTypeTooltip(documents.get(documentInfo.uri), documentInfo.position);
+    }).then((hover) => { return hover; });
 });
-
 
 connection.onShutdown(() => {
     // TODO add logging
     ghcMod.shutdown();
-})
+});
 
-function getInfoOrTypeTooltip(document:ITextDocument, position:Position): Promise<Hover> {
+function getInfoOrTypeTooltip(document: ITextDocument, position: Position): Promise<Hover> {
     return ghcMod.getInfo(document, position)
     .then((infoTooltip) => {
         if (infoTooltip) {
