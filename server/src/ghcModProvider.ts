@@ -4,8 +4,8 @@
  * ------------------------------------------------------------------------------------------ */
 'use strict';
 
-import { ILogger, IGhcModProvider, IGhcModProcess, GhcModOpts } from './ghcMod';
-import { GhcModProcess } from './ghcModProcess';
+import { ILogger, IGhcModProvider, IGhcModProcess, GhcModOpts } from './ghcModInterfaces';
+import { DocumentUtils } from './utils/document';
 import {
     ITextDocument, Diagnostic, DiagnosticSeverity, Range, Position
 } from 'vscode-languageserver';
@@ -14,9 +14,9 @@ export class GhcModProvider implements IGhcModProvider {
     private ghcModProcess: IGhcModProcess;
     private logger: ILogger;
 
-    constructor(logger: ILogger) {
+    constructor(ghcModProcess: IGhcModProcess, logger: ILogger) {
         this.logger = logger;
-        this.ghcModProcess = new GhcModProcess(logger);
+        this.ghcModProcess = ghcModProcess;
     }
 
     // GHC-MOD COMMANDS
@@ -27,7 +27,7 @@ export class GhcModProvider implements IGhcModProvider {
             text: document.getText(),
             uri: document.uri
         }).then((lines) => {
-            return this.getCheckDiagnostics(lines);
+            return this.parseCheckDiagnostics(lines);
         });
     }
 
@@ -59,7 +59,7 @@ export class GhcModProvider implements IGhcModProvider {
             command: 'info',
             text: document.getText(),
             uri: document.uri,
-            args: [this.getWordAtPosition(document, position)]
+            args: [DocumentUtils.getWordAtPosition(document.getText(), position)]
         }).then((lines) => {
             let tooltip = lines.join('\n');
             if (tooltip.indexOf('Cannot show info') === -1) {
@@ -74,8 +74,27 @@ export class GhcModProvider implements IGhcModProvider {
         this.ghcModProcess.killProcess();
     }
 
-    // PRIVATE METHODS    
-    private getCheckDiagnostics(lines: string[]): Diagnostic[] {
+    // PRIVATE METHODS
+    private parseTypeInfo(line: string, position: Position): string {
+        // Example line: 4 1 4 17 "a -> a" 
+        let tokens = line.split('"');
+        let type = tokens[1] || '';
+        let pos = tokens[0].trim().split(' ').map((i) => { return parseInt(i, 10) - 1; });
+        let typeRange: Range;
+        try {
+            typeRange = Range.create(pos[0], pos[1], pos[2], pos[3]);
+        } catch (error) {
+            return null;
+        }
+
+        if (DocumentUtils.isPositionInRange(position, typeRange)) {
+            return type;
+        } else  {
+            return null;
+        }
+    }
+
+    private parseCheckDiagnostics(lines: string[]): Diagnostic[] {
         let diagnostics: Diagnostic[] = [];
         lines.forEach((line) => {
             let match = line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/);
@@ -92,46 +111,5 @@ export class GhcModProvider implements IGhcModProvider {
             }
         });
         return diagnostics;
-    }
-
-    private getWordAtPosition(document: ITextDocument, position: Position): string {
-        let line = document.getText().split('\n')[position.line];
-        let startPosition = line.lastIndexOf(' ', position.character) + 1;
-        if (startPosition < 0) {
-            startPosition = 0;
-        }
-        let endPosition = line.indexOf(' ', position.character);
-        if (endPosition < 0) {
-            endPosition = line.length;
-        }
-        let ret = line.slice(startPosition, endPosition);
-        return ret;
-    }
-
-    private parseTypeInfo(line: string, position: Position): string {
-        // Example line: 4 1 4 17 "a -> a" 
-        let tokens = line.split('"');
-        let type = tokens[1] || '';
-        let pos = tokens[0].trim().split(' ').map((i) => { return parseInt(i, 10) - 1; });
-        let typeRange: Range;
-        try {
-            typeRange = Range.create(pos[0], pos[1], pos[2], pos[3]);
-        } catch (error) {
-            return null;
-        }
-
-        if (this.isPositionInRange(position, typeRange)) {
-            return type;
-        } else  {
-            return null;
-        }
-    }
-
-    private isPositionInRange(position: Position, range: Range): boolean {
-        if (position.line < range.start.line || position.line > range.end.line ||
-            position.character < range.start.character || position.character > range.end.character) {
-            return false;
-        }
-        return true;
     }
 }

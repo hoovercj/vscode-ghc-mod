@@ -18,7 +18,6 @@
         "member-access": true,
         "member-ordering": [true,
             "public-before-private",
-            "static-before-instance",
             "variables-before-functions"
         ],
         "no-any": true,

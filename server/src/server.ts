@@ -12,7 +12,8 @@ import {
 } from 'vscode-languageserver';
 
 // Interface between VS Code extension and GHC-Mod api
-import { IGhcModProvider } from './ghcMod';
+import { IGhcModProvider, ILogger } from './ghcModInterfaces';
+import { GhcModProcess } from './ghcMod';
 import { GhcModProvider } from './ghcModProvider';
 let ghcMod: IGhcModProvider;
 
@@ -20,6 +21,9 @@ let ghcMod: IGhcModProvider;
 import { ThrottledDelayer } from './utils/async';
 let documentChangedDelayers: { [key: string]: ThrottledDelayer<void> } = Object.create(null);
 let hoverDelayer: ThrottledDelayer<Hover> = new ThrottledDelayer<Hover>(100);
+
+import { RemoteConsoleAdapter } from './utils/remoteConsoleAdapter';
+let logger: ILogger;
 
 // Create a connection for the server. The connection uses 
 // stdin / stdout for message passing
@@ -36,8 +40,9 @@ documents.listen(connection);
 // in the passed params the rootPath of the workspace plus the client capabilites. 
 let workspaceRoot: string;
 connection.onInitialize((params): InitializeResult => {
+    logger = new RemoteConsoleAdapter(connection.console);
     workspaceRoot = params.rootPath;
-    ghcMod = new GhcModProvider(connection.console);
+    ghcMod = new GhcModProvider(new GhcModProcess(logger), logger);
     return {
         capabilities: {
             // Tell the client that the server works in FULL text document sync mode
