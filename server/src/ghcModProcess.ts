@@ -2,10 +2,9 @@
  * Copyright (c) Cody Hoover. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { IGhcModProcess, GhcModOpts } from './ghcMod';
+import { ILogger, IGhcModProcess, GhcModOpts } from './ghcMod';
 import * as cp from 'child_process';
 import {EOL} from 'os';
-import { RemoteConsole } from 'vscode-languageserver';
 
 let promiseQueue = require('promise-queue');
 
@@ -13,10 +12,10 @@ export class GhcModProcess implements IGhcModProcess {
 
     private EOT: string = EOL + '\x04' + EOL;
     private childProcess: cp.ChildProcess;
-    private logger: RemoteConsole;
+    private logger: ILogger;
     private queue: any = new promiseQueue(1);
 
-    constructor(logger: RemoteConsole) {
+    constructor(logger: ILogger) {
         this.logger = logger;
     }
 
@@ -37,32 +36,17 @@ export class GhcModProcess implements IGhcModProcess {
         }
 
         let promise = Promise.resolve();
-
         return promise.then(() => {
-            // options.text represents the haskell file relevant to the command
-            // In case it has not been saved, map the file to the text first
-            if (options.text) {
-                return this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
-            }
-        }).then(() => {
-            let cmd = [];
-            if (options.uri) {
-                cmd = [options.command, options.uri].concat(options.args);
-            } else {
-                cmd = [options.command].concat(options.args);
-            }
-            return this.interact(process, cmd.join(' ').replace(EOL, ' ') + EOL);
-        }).then((res) => {
-            if (options.text) {
-                return this.interact(process, `unmap-file ${options.uri}${EOL}`).then(() => {
+                return this.mapFile(process, options);
+            }).then(() => {
+                return this.interact(process, this.commandAndArgsAsString(options));
+            }).then((res) => {
+                return this.unmapFile(process, options).then(() => {
                     return res;
                 });
-            } else {
-                return res;
-            }
-        }, (err) => {
-            this.logger.error('ERROR: RunGhcMod -' + err);
-        });
+            }, (err) => {
+                this.logger.error('ERROR: RunGhcMod -' + err);
+            });
     }
 
     public killProcess(): void {
@@ -125,9 +109,24 @@ export class GhcModProcess implements IGhcModProcess {
             // 1. Allow this to be configurable.
             // 2. Present this information to user -- but how?
             // https://github.com/hoovercj/vscode-ghc-mod/issues/5
-            this.logger.log('Error: ' + data.toString());
+            this.logger.error('Error: ' + data.toString());
         });
         this.childProcess.stdout.setEncoding('utf-8');
         return this.childProcess;
+    }
+
+    private mapFile(process: cp.ChildProcess, options: GhcModOpts): Promise<string[]> {
+        // options.text represents the haskell file relevant to the command
+        // In case it has not been saved, map the file to the text first
+        return !options.text ? null : this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
+    }
+
+    private unmapFile(process: cp.ChildProcess, options: GhcModOpts): Promise<string[]> {
+        return !options.text ? null : this.interact(process, `unmap-file ${options.uri}${EOL}`);
+    }
+
+    private commandAndArgsAsString(options: GhcModOpts): string {
+        let base = options.uri ? [options.command, options.uri] : [options.command];
+        return base.concat(options.args).join(' ').replace(EOL, ' ') + EOL;
     }
 }

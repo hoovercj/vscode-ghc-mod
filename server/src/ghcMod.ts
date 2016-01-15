@@ -1,5 +1,12 @@
 import { ITextDocument, Diagnostic, Position } from 'vscode-languageserver';
 
+export interface ILogger {
+    info(message: string): void;
+    log(message: string): void;
+    warn(message: string): void;
+    error(message: string): void;
+}
+
 export interface GhcModOpts {
     command: string;
     text?: string;

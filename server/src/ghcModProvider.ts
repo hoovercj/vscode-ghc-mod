@@ -4,17 +4,17 @@
  * ------------------------------------------------------------------------------------------ */
 'use strict';
 
-import { IGhcModProvider, IGhcModProcess, GhcModOpts } from './ghcMod';
+import { ILogger, IGhcModProvider, IGhcModProcess, GhcModOpts } from './ghcMod';
 import { GhcModProcess } from './ghcModProcess';
 import {
-    RemoteConsole, ITextDocument, Diagnostic, DiagnosticSeverity, Range, Position
+    ITextDocument, Diagnostic, DiagnosticSeverity, Range, Position
 } from 'vscode-languageserver';
 
 export class GhcModProvider implements IGhcModProvider {
     private ghcModProcess: IGhcModProcess;
-    private logger: RemoteConsole;
+    private logger: ILogger;
 
-    constructor(logger: RemoteConsole) {
+    constructor(logger: ILogger) {
         this.logger = logger;
         this.ghcModProcess = new GhcModProcess(logger);
     }
@@ -38,29 +38,19 @@ export class GhcModProvider implements IGhcModProvider {
             uri: document.uri,
             args: [(position.line + 1).toString(), (position.character + 1).toString()]
         }).then((lines) => {
-            return lines.reduce((acc, line) => {
-                if (acc !== '') {
-                    return acc;
+            lines.forEach((line) => {
+                let type = this.parseTypeInfo(line, position);
+                if (type) {
+                    return type;
                 }
-                // Example line: 4 1 4 17 "a -> a" 
-                let tokens = line.split('"');
-                let type = tokens[1] || '';
-                let pos = tokens[0].trim().split(' ').map((i) => { return parseInt(i, 10) - 1; });
-                let typeRange: Range;
-                try {
-                    typeRange = Range.create(pos[0], pos[1], pos[2], pos[3]);
-                } catch (error) {
-                    return acc;
-                }
-
-                let cursorLine = position.line;
-                let cursorCharacter = position.character;
-                if (cursorLine < typeRange.start.line || cursorLine > typeRange.end.line ||
-                    cursorCharacter < typeRange.start.character || cursorCharacter > typeRange.end.character) {
-                    return acc;
-                }
-                return type;
-            }, '');
+            });
+            return '';
+            // return lines.reduce((acc, line) => {
+            //     if (acc) {
+            //         return acc;
+            //     }
+            //     return this.parseTypeInfo(line, position);
+            // }, '');
         });
     }
 
@@ -116,5 +106,32 @@ export class GhcModProvider implements IGhcModProvider {
         }
         let ret = line.slice(startPosition, endPosition);
         return ret;
+    }
+
+    private parseTypeInfo(line: string, position: Position): string {
+        // Example line: 4 1 4 17 "a -> a" 
+        let tokens = line.split('"');
+        let type = tokens[1] || '';
+        let pos = tokens[0].trim().split(' ').map((i) => { return parseInt(i, 10) - 1; });
+        let typeRange: Range;
+        try {
+            typeRange = Range.create(pos[0], pos[1], pos[2], pos[3]);
+        } catch (error) {
+            return null;
+        }
+
+        if (this.isPositionInRange(position, typeRange)) {
+            return type;
+        } else  {
+            return null;
+        }
+    }
+
+    private isPositionInRange(position: Position, range: Range): boolean {
+        if (position.line < range.start.line || position.line > range.end.line ||
+            position.character < range.start.character || position.character > range.end.character) {
+            return false;
+        }
+        return true;
     }
 }
