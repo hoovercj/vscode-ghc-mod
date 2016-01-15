@@ -13,10 +13,12 @@
         "promise-queue": "*"
 	},
 	"devDependencies": {
-		"typescript": "^1.6.2"
+		"typescript": "^1.6.2",
+		"mocha": "^2.3.4"
 	},
 	"scripts": {
 		"compile": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
-		"watch": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc --watch -p ."
+		"watch": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc --watch -p .",
+        "test": "mocha --ui tdd ../client/server/test" 
 	}
 }

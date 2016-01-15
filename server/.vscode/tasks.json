@@ -3,7 +3,15 @@
 	"command": "npm",
 	"isShellCommand": true,
 	"showOutput": "silent",
-	"args": ["run", "watch"],
-	"isWatching": true,
-	"problemMatcher": "$tsc-watch"
+    "tasks": [
+	   {
+            "taskName": "build",
+            "args": ["run", "watch"],
+            "isWatching": true,
+            "problemMatcher": "$tsc-watch"
+        }, {
+            "taskName": "test",
+            "args": ["test"]
+        }
+    ]
 }
