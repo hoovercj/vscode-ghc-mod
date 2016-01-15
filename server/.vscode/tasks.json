@@ -5,13 +5,14 @@
 	"showOutput": "silent",
     "tasks": [
 	   {
-            "taskName": "build",
-            "args": ["run", "watch"],
+            "taskName": "run",
+            "args": ["watch"],
             "isWatching": true,
+            "isBuildCommand": true,
             "problemMatcher": "$tsc-watch"
         }, {
             "taskName": "test",
-            "args": ["test"]
+            "isTestCommand": true
         }
     ]
 }
