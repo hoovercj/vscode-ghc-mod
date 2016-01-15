@@ -12,8 +12,9 @@ import {
 } from 'vscode-languageserver';
 
 // Interface between VS Code extension and GHC-Mod api
-import { GhcMod } from './ghcMod';
-let ghcMod: GhcMod;
+import { IGhcModProvider } from './ghcMod';
+import { GhcModProvider } from './ghcModProvider';
+let ghcMod: IGhcModProvider;
 
 // Use throttled delayers to control the rate of calls to ghc-mod
 import { ThrottledDelayer } from './utils/async';
@@ -36,7 +37,7 @@ documents.listen(connection);
 let workspaceRoot: string;
 connection.onInitialize((params): InitializeResult => {
     workspaceRoot = params.rootPath;
-    ghcMod = new GhcMod(connection.console);
+    ghcMod = new GhcModProvider(connection.console);
     return {
         capabilities: {
             // Tell the client that the server works in FULL text document sync mode

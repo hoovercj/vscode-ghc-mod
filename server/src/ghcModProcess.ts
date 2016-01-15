@@ -2,22 +2,14 @@
  * Copyright (c) Cody Hoover. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
+import { IGhcModProcess, GhcModOpts } from './ghcMod';
 import * as cp from 'child_process';
 import {EOL} from 'os';
-import {
-    RemoteConsole
-} from 'vscode-languageserver';
+import { RemoteConsole } from 'vscode-languageserver';
 
 let promiseQueue = require('promise-queue');
 
-export interface GhcModOpts {
-    command: string;
-    text?: string;
-    uri?: string; // Might need normalized in the future via getNormalizedUri()
-    args?: string[];
-}
-
-export class GhcModProcess {
+export class GhcModProcess implements IGhcModProcess {
 
     private EOT: string = EOL + '\x04' + EOL;
     private childProcess: cp.ChildProcess;
