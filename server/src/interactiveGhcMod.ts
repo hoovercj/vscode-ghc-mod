@@ -8,7 +8,7 @@ import {EOL} from 'os';
 
 let promiseQueue = require('promise-queue');
 
-export class GhcModProcess implements IGhcMod {
+export class InteractiveGhcModProcess implements IGhcMod {
 
     private EOT: string = EOL + '\x04' + EOL;
     private childProcess: cp.ChildProcess;
@@ -32,7 +32,7 @@ export class GhcModProcess implements IGhcMod {
         if (!process) {
             this.logger.log('Process could not be spawned');
             // TODO: notify user of issue
-            return null;
+            return Promise.resolve([]);
         }
 
         let promise = Promise.resolve();
@@ -118,15 +118,18 @@ export class GhcModProcess implements IGhcMod {
     private mapFile(process: cp.ChildProcess, options: GhcModOpts): Promise<string[]> {
         // options.text represents the haskell file relevant to the command
         // In case it has not been saved, map the file to the text first
-        return !options.text ? null : this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
+        return !options.text ? Promise.resolve([]) : this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
     }
 
     private unmapFile(process: cp.ChildProcess, options: GhcModOpts): Promise<string[]> {
-        return !options.text ? null : this.interact(process, `unmap-file ${options.uri}${EOL}`);
+        return !options.text ? Promise.resolve([]) : this.interact(process, `unmap-file ${options.uri}${EOL}`);
     }
 
     private commandAndArgsAsString(options: GhcModOpts): string {
         let base = options.uri ? [options.command, options.uri] : [options.command];
-        return base.concat(options.args).join(' ').replace(EOL, ' ') + EOL;
+        if (options.args) {
+            base = base.concat(options.args);
+        }
+        return base.join(' ').replace(EOL, ' ') + EOL;
     }
 }

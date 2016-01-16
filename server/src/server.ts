@@ -13,7 +13,7 @@ import {
 
 // Interface between VS Code extension and GHC-Mod api
 import { IGhcModProvider, ILogger } from './ghcModInterfaces';
-import { GhcModProcess } from './ghcMod';
+import { InteractiveGhcModProcess } from './interactiveGhcMod';
 import { GhcModProvider } from './ghcModProvider';
 let ghcMod: IGhcModProvider;
 
@@ -42,7 +42,7 @@ let workspaceRoot: string;
 connection.onInitialize((params): InitializeResult => {
     logger = new RemoteConsoleAdapter(connection.console);
     workspaceRoot = params.rootPath;
-    ghcMod = new GhcModProvider(new GhcModProcess(logger), logger);
+    ghcMod = new GhcModProvider(new InteractiveGhcModProcess(logger), logger);
     return {
         capabilities: {
             // Tell the client that the server works in FULL text document sync mode
