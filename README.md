@@ -15,8 +15,15 @@ To get the application running, clone the whole repository and run `npm install`
 ## Debugging the extension
 After running the extension as explained above, press `F5` in a seperate instance of VS Code that has the `server` directory open. This will attach the debugger to the extension host.
 
+## Testing the extension
+### Mocha test runner via npm
+`npm test` from the server directory will run tests against the most recently compiled version of the code. The test command does NOT currently build the application.
+
+### Wallabyjs
+This project includes a wallaby.js configuration file which should automatically work if the [wallabyjs](https://marketplace.visualstudio.com/items/WallabyJs.wallaby-vscode) extension is installed. Simply open the server folder in VS Code and issue the `start` command to wallabyjs (ctrl+shift+R, R).
+
 ## Server Components
-There are three main components with distinct responsibilities. `server.ts` is responsible for all communication with VS Code and decides when to issue ghc-mod commands (i.e. check when documents change, info on hover, etc.). `ghcModProcess.ts` is a wrapper around the ghc-mod process and handles reading and writing to the process vs stdin/stdout to issue commands and process output. `ghcMod.ts` is the middleman. It exposes the supported ghc-mod commands to `server.ts` via public methods such as `getType` and `doCheck` and issues properly formed commands to `ghcModProcess.ts`. It returns the results via promises.
+There are three main components with distinct responsibilities. `server.ts` is responsible for all communication with VS Code and decides when to issue ghc-mod commands (i.e. check when documents change, info on hover, etc.). `ghcMod.ts` is a wrapper around the ghc-mod process running in interactive mode and handles reading and writing to the process vs stdin/stdout to issue commands and process output. It implements the `IGhcMod` interface. This allows it to be swapped out with a non-interactive implementation of `IGhcMod`. `ghcModProvider.ts` is the middleman and implements the `IGhcModProvider` interface which exposes the supported ghc-mod commands to `server.ts` via public methods such as `getType` and `doCheck` and issues properly formed commands to an object that implements `IGhcMod.ts`. It returns the results via promises.
 
 ## Features
 - `ghc-mod check`
