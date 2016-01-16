@@ -1,4 +1,4 @@
-import { ITextDocument, Diagnostic, Position } from 'vscode-languageserver';
+import { Diagnostic, Position } from 'vscode-languageserver';
 
 export interface ILogger {
     info(message: string): void;
@@ -14,14 +14,14 @@ export interface GhcModOpts {
     args?: string[];
 }
 
-export interface IGhcModProcess {
+export interface IGhcMod {
     runGhcModCommand(options: GhcModOpts): Promise<string[]>;
     killProcess(): void;
 }
 
 export interface IGhcModProvider {
-    doCheck(document: ITextDocument): Promise<Diagnostic[]>;
-    getType(document: ITextDocument, position: Position): Promise<string>;
-    getInfo(document: ITextDocument, position: Position): Promise<string>;
+    doCheck(text: string, uri: string): Promise<Diagnostic[]>;
+    getType(text: string, uri: string, position: Position): Promise<string>;
+    getInfo(text: string, uri: string, position: Position): Promise<string>;
     shutdown(): void;
 }

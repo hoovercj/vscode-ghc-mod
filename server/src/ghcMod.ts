@@ -2,13 +2,13 @@
  * Copyright (c) Cody Hoover. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { ILogger, IGhcModProcess, GhcModOpts } from './ghcModInterfaces';
+import { ILogger, IGhcMod, GhcModOpts } from './ghcModInterfaces';
 import * as cp from 'child_process';
 import {EOL} from 'os';
 
 let promiseQueue = require('promise-queue');
 
-export class GhcModProcess implements IGhcModProcess {
+export class GhcModProcess implements IGhcMod {
 
     private EOT: string = EOL + '\x04' + EOL;
     private childProcess: cp.ChildProcess;

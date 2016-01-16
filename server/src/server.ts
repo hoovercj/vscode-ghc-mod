@@ -106,12 +106,12 @@ connection.onShutdown(() => {
 });
 
 function getInfoOrTypeTooltip(document: ITextDocument, position: Position): Promise<Hover> {
-    return ghcMod.getInfo(document, position)
+    return ghcMod.getInfo(document.getText(), document.uri, position)
     .then((infoTooltip) => {
         if (infoTooltip) {
             return infoTooltip;
         } else {
-            return ghcMod.getType(document, position);
+            return ghcMod.getType(document.getText(), document.uri, position);
         }
     }).then((tooltip) => {
        return <Hover> {
@@ -122,7 +122,7 @@ function getInfoOrTypeTooltip(document: ITextDocument, position: Position): Prom
 
 function ghcCheck(document: ITextDocument): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-        ghcMod.doCheck(document).then((diagnostics) => {
+        ghcMod.doCheck(document.getText(), document.uri).then((diagnostics) => {
             connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics.slice(0, maxNumberOfProblems) });
             resolve();
         }, (err) => {

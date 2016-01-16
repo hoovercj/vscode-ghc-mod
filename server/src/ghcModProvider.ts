@@ -4,62 +4,59 @@
  * ------------------------------------------------------------------------------------------ */
 'use strict';
 
-import { ILogger, IGhcModProvider, IGhcModProcess, GhcModOpts } from './ghcModInterfaces';
+import { ILogger, IGhcModProvider, IGhcMod, GhcModOpts } from './ghcModInterfaces';
 import { DocumentUtils } from './utils/document';
 import {
-    ITextDocument, Diagnostic, DiagnosticSeverity, Range, Position
+    Diagnostic, DiagnosticSeverity, Range, Position
 } from 'vscode-languageserver';
 
 export class GhcModProvider implements IGhcModProvider {
-    private ghcModProcess: IGhcModProcess;
+    private ghcMod: IGhcMod;
     private logger: ILogger;
 
-    constructor(ghcModProcess: IGhcModProcess, logger: ILogger) {
+    constructor(ghcMod: IGhcMod, logger: ILogger) {
         this.logger = logger;
-        this.ghcModProcess = ghcModProcess;
+        this.ghcMod = ghcMod;
     }
 
     // GHC-MOD COMMANDS
-    public doCheck(document: ITextDocument): Promise<Diagnostic[]> {
-        this.logger.log('Do Check: ' + document.uri);
-        return this.ghcModProcess.runGhcModCommand(<GhcModOpts>{
+    public doCheck(text: string, uri: string): Promise<Diagnostic[]> {
+        this.logger.log('Do Check: ' + uri);
+        return this.ghcMod.runGhcModCommand(<GhcModOpts>{
             command: 'check',
-            text: document.getText(),
-            uri: document.uri
+            text: text,
+            uri: uri
         }).then((lines) => {
             return this.parseCheckDiagnostics(lines);
         });
     }
 
-    public getType(document: ITextDocument, position: Position): Promise<string> {
-        return this.ghcModProcess.runGhcModCommand(<GhcModOpts>{
+    public getType(text: string, uri: string, position: Position): Promise<string> {
+        return this.ghcMod.runGhcModCommand(<GhcModOpts>{
             command: 'type',
-            text: document.getText(),
-            uri: document.uri,
+            text: text,
+            uri: uri,
             args: [(position.line + 1).toString(), (position.character + 1).toString()]
         }).then((lines) => {
-            lines.forEach((line) => {
-                let type = this.parseTypeInfo(line, position);
-                if (type) {
-                    return type;
+            // Returns results starting with most narrow range
+            // Return the first valid type for this position
+            // 1 9 1 10 "a"
+            // 1 1 1 20 "a -> a"
+            return lines.reduce((acc, line) => {
+                if (acc) {
+                    return acc;
                 }
-            });
-            return '';
-            // return lines.reduce((acc, line) => {
-            //     if (acc) {
-            //         return acc;
-            //     }
-            //     return this.parseTypeInfo(line, position);
-            // }, '');
+                return this.parseTypeInfo(line, position);
+            }, '');
         });
     }
 
-    public getInfo(document: ITextDocument, position: Position): Promise<string> {
-        return this.ghcModProcess.runGhcModCommand(<GhcModOpts>{
+    public getInfo(text: string, uri: string, position: Position): Promise<string> {
+        return this.ghcMod.runGhcModCommand(<GhcModOpts>{
             command: 'info',
-            text: document.getText(),
-            uri: document.uri,
-            args: [DocumentUtils.getWordAtPosition(document.getText(), position)]
+            text: text,
+            uri: uri,
+            args: [DocumentUtils.getWordAtPosition(text, position)]
         }).then((lines) => {
             let tooltip = lines.join('\n');
             if (tooltip.indexOf('Cannot show info') === -1) {
@@ -71,7 +68,7 @@ export class GhcModProvider implements IGhcModProvider {
     }
 
     public shutdown(): void {
-        this.ghcModProcess.killProcess();
+        this.ghcMod.killProcess();
     }
 
     // PRIVATE METHODS
@@ -79,18 +76,20 @@ export class GhcModProvider implements IGhcModProvider {
         // Example line: 4 1 4 17 "a -> a" 
         let tokens = line.split('"');
         let type = tokens[1] || '';
-        let pos = tokens[0].trim().split(' ').map((i) => { return parseInt(i, 10) - 1; });
+        let pos = tokens[0].trim().split(' ').map((i) => {
+            return parseInt(i, 10) - 1;
+        });
         let typeRange: Range;
         try {
             typeRange = Range.create(pos[0], pos[1], pos[2], pos[3]);
         } catch (error) {
-            return null;
+            return '';
         }
 
         if (DocumentUtils.isPositionInRange(position, typeRange)) {
             return type;
         } else  {
-            return null;
+            return '';
         }
     }
 

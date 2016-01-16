@@ -65,8 +65,7 @@ describe('DocumentUtils', () => {
         });
 
         it ('should return false if range is null', () => {
-           assert.equal(DocumentUtils.isPositionInRange(Position.create(0,0), null), false);
+           assert.equal(DocumentUtils.isPositionInRange(Position.create(0, 0), null), false);
         });
     });
 });
-
