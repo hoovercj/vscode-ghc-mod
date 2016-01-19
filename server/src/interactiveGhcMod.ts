@@ -8,6 +8,9 @@ import {EOL} from 'os';
 
 let promiseQueue = require('promise-queue');
 
+// *******************************************************************************
+// NOTE: Editing this file with wallabyjs running will start too many processes //
+// *******************************************************************************
 export class InteractiveGhcModProcess implements IGhcMod {
 
     private EOT: string = EOL + '\x04' + EOL;

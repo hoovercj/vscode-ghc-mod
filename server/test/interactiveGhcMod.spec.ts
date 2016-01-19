@@ -14,42 +14,102 @@ import { TestLogger } from './helpers/TestLogger';
 import { InteractiveGhcModProcess } from '../src/interactiveGhcMod';
 
 // Defines a Mocha test suite to group tests of similar kind together
+// *******************************************************************************
+// NOTE: Editing this file with wallabyjs running will start too many processes //
+// *******************************************************************************
 describe('InteractiveGhcModProcess', function() {
     this.timeout(0);
 
     let logger = new TestLogger();
-    let ghcMod: IGhcMod;
-    let uri: string = 'test/examples/empty.hs';
-
-    before(() => {
-        ghcMod = new InteractiveGhcModProcess(logger);
-    });
+    let ghcMod = new InteractiveGhcModProcess(logger);
 
     after(() => {
         ghcMod.killProcess();
     });
 
-
     describe('#runGhcModCommand', () => {
-        it('should return diagnostics', () => {
-            let opts = <GhcModOpts>{
-                command: 'check',
-                text: '',
-                uri: uri
-            };
-            return ghcMod.runGhcModCommand(opts).then((lines) => {
-                assert.equal(lines.length, 1);
+        describe('Check command', () => {
+            let regex = /.+:\d+:\d+:(Warning: |Error: )?.+/;
+
+            it('should return an empty array for valid files', () => {
+                let uri: string = 'test/fixtures/valid.hs';
+                let opts = <GhcModOpts>{
+                    command: 'check',
+                    uri: uri
+                };
+                return ghcMod.runGhcModCommand(opts).then((lines) => {
+                    assert.equal(lines.length, 0);
+                });
+            });
+
+            it('should return messages without severity in an expected format', () => {
+                let uri: string = 'test/fixtures/empty.hs';
+                let opts = <GhcModOpts>{
+                    command: 'check',
+                    uri: uri
+                };
+                return ghcMod.runGhcModCommand(opts).then((lines) => {
+                    assert.equal(lines.length, 1);
+                    assert.ok(regex.test(lines[0]));
+                });
+            });
+
+            it('should return warnings in an expected format', () => {
+                let uri: string = 'test/fixtures/type.hs';
+                let opts = <GhcModOpts>{
+                    command: 'check',
+                    uri: uri
+                };
+                return ghcMod.runGhcModCommand(opts).then((lines) => {
+                    assert.equal(lines.length, 1);
+                    assert.ok(regex.test(lines[0]));
+                });
             });
         });
 
-        it('should return diagnostics for an empty file', () => {
-            let opts = <GhcModOpts>{
-                command: 'check',
-                uri: uri
-            };
-            let regex = /test\\examples\\empty.hs:\d+:\d+:The IO action `main' is not defined in module `Main'/;
-            return ghcMod.runGhcModCommand(opts).then((lines) => {
-                assert.ok(regex.test(lines[0]));
+        describe('Type command', () => {
+            it('should return the expected output', () => {
+                let uri: string = 'test/fixtures/type.hs';
+                let opts = <GhcModOpts>{
+                    command: 'type',
+                    uri: uri,
+                    args: ['3', '8']
+                };
+                let output = [
+                    '3 8 3 9 "a"',
+                    '3 1 3 17 "a -> a"'
+                ];
+                return ghcMod.runGhcModCommand(opts).then((lines) => {
+                    assert.deepEqual(lines, output);
+                });
+            });
+        });
+
+        describe('Info command', () => {
+            it('should return "Cannot show info" if info unavailable', () => {
+                let uri: string = 'test/fixtures/type.hs';
+                let opts = <GhcModOpts>{
+                    command: 'info',
+                    uri: uri,
+                    args: ['bogus']
+                };
+                let output = ['Cannot show info'];
+                return ghcMod.runGhcModCommand(opts).then((lines) => {
+                    assert.deepEqual(lines, output);
+                });
+            });
+
+            it('should return info if available', () => {
+                let uri: string = 'test/fixtures/type.hs';
+                let opts = <GhcModOpts>{
+                    command: 'info',
+                    uri: uri,
+                    args: ['Num']
+                };
+                return ghcMod.runGhcModCommand(opts).then((lines) => {
+                    assert.equal(lines.length, 1);
+                    assert.equal(lines[0].indexOf('Cannot show info'), -1);
+                });
             });
         });
     });
