@@ -22,7 +22,7 @@ import { ThrottledDelayer } from './utils/async';
 let documentChangedDelayers: { [key: string]: ThrottledDelayer<void> } = Object.create(null);
 let hoverDelayer: ThrottledDelayer<Hover> = new ThrottledDelayer<Hover>(100);
 
-import { RemoteConsoleAdapter } from './utils/remoteConsoleAdapter';
+import { RemoteConnectionAdapter } from './utils/remoteConnectionAdapter';
 let logger: ILogger;
 
 // Create a connection for the server. The connection uses 
@@ -40,7 +40,7 @@ documents.listen(connection);
 // in the passed params the rootPath of the workspace plus the client capabilites. 
 let workspaceRoot: string;
 connection.onInitialize((params): InitializeResult => {
-    logger = new RemoteConsoleAdapter(connection.console);
+    logger = new RemoteConnectionAdapter(connection);
     workspaceRoot = params.rootPath;
     ghcMod = new GhcModProvider(new InteractiveGhcModProcess(logger), logger);
     return {

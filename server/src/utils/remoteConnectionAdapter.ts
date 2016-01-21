@@ -1,11 +1,13 @@
-import { RemoteConsole } from 'vscode-languageserver';
+import { IConnection, RemoteConsole, RemoteWindow } from 'vscode-languageserver';
 import { ILogger } from '../ghcModInterfaces';
 
-export class RemoteConsoleAdapter implements ILogger {
+export class RemoteConnectionAdapter implements ILogger {
     private logger: RemoteConsole;
+    private window: RemoteWindow;
 
-    public constructor(console: RemoteConsole) {
-        this.logger = console;
+    public constructor(connection: IConnection) {
+        this.logger = connection.console;
+        this.window = connection.window;
     }
 
     public log(message: string): void {
@@ -22,5 +24,6 @@ export class RemoteConsoleAdapter implements ILogger {
 
     public error(message: string): void {
         this.logger.error(message);
+        this.window.showErrorMessage(message);
     }
 }

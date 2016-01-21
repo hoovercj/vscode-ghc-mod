@@ -5,6 +5,7 @@
 import { ILogger, IGhcMod, GhcModOpts } from './ghcModInterfaces';
 import * as cp from 'child_process';
 import {EOL} from 'os';
+import { ThrottledDelayer } from './utils/async';
 
 let promiseQueue = require('promise-queue');
 
@@ -33,7 +34,7 @@ export class InteractiveGhcModProcess implements IGhcMod {
     public runGhcModCommand_(options: GhcModOpts): Promise<string[]> {
         let process = this.spawnProcess();
         if (!process) {
-            this.logger.log('Process could not be spawned');
+            this.logger.error('Process could not be spawned');
             // TODO: notify user of issue
             return Promise.resolve([]);
         }
@@ -48,7 +49,7 @@ export class InteractiveGhcModProcess implements IGhcMod {
                     return res;
                 });
             }, (err) => {
-                this.logger.error('ERROR: RunGhcMod -' + err);
+                this.logger.error('Error running ghc-mod command -' + err);
             });
     }
 
@@ -84,7 +85,9 @@ export class InteractiveGhcModProcess implements IGhcMod {
             };
             let exitCallback = () => {
                 cleanup();
-                reject(`ghc-modi crashed on command ${command} with savedLines ${savedLines}`);
+                let message = `ghc-modi crashed on command ${command} with savedLines ${savedLines}`;
+                this.logger.error(message);
+                reject(message);
             };
             process.stdout.on('data', parseData);
             process.on('exit', exitCallback);
@@ -105,14 +108,19 @@ export class InteractiveGhcModProcess implements IGhcMod {
         if (this.childProcess) {
             return this.childProcess;
         }
+        let errorDelayer = new ThrottledDelayer<void>(100);
+        let errorLines: string[] = [];
         this.childProcess = cp.spawn('ghc-mod', ['legacy-interactive']);
         this.childProcess.on('exit', () => this.childProcess = null);
         this.childProcess.stderr.on('data', (data) => {
-            // TODO:
-            // 1. Allow this to be configurable.
-            // 2. Present this information to user -- but how?
-            // https://github.com/hoovercj/vscode-ghc-mod/issues/5
-            this.logger.error('Error: ' + data.toString());
+            errorLines.push(data);
+            errorDelayer.trigger(() => {
+                return new Promise<void>((resolve, reject) => {
+                    this.logger.warn(`ghc-mod stderr: ${errorLines.join('')}`);
+                    errorLines = [];
+                    resolve();
+                });
+            });
         });
         this.childProcess.stdout.setEncoding('utf-8');
         return this.childProcess;
