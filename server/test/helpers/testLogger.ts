@@ -1,6 +1,10 @@
-import { ILogger } from '../../src/ghcModInterfaces';
+import { LogLevel, ILogger } from '../../src/ghcModInterfaces';
 
 export class TestLogger implements ILogger {
+
+    public setLogLevel(level: LogLevel): void {
+        // do nothing
+    }
 
     public log(message: string): void {
         return;

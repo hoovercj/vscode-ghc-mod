@@ -12,10 +12,11 @@ import {
 } from 'vscode-languageserver';
 
 // Interface between VS Code extension and GHC-Mod api
-import { IGhcModProvider, ILogger } from './ghcModInterfaces';
-import { InteractiveGhcModProcess } from './interactiveGhcMod';
+import { IGhcMod, IGhcModProvider, LogLevel, ILogger } from './ghcModInterfaces';
+import { InteractiveGhcModProcess, InteractiveGhcModProcessOptions } from './interactiveGhcMod';
 import { GhcModProvider } from './ghcModProvider';
-let ghcMod: IGhcModProvider;
+let ghcMod: IGhcMod;
+let ghcModProvider: IGhcModProvider;
 
 // Use throttled delayers to control the rate of calls to ghc-mod
 import { ThrottledDelayer } from './utils/async';
@@ -42,7 +43,12 @@ let workspaceRoot: string;
 connection.onInitialize((params): InitializeResult => {
     logger = new RemoteConnectionAdapter(connection);
     workspaceRoot = params.rootPath;
-    ghcMod = new GhcModProvider(new InteractiveGhcModProcess(logger), logger);
+
+    // NOTE: onConfigurationChange gets called after onInitialize
+    //       and the settings are needed to initialize ghcMod.
+    //       Therefore, defer initialization to onConfigurationChange.
+    // ghcMod = createGhcMod();
+    // ghcModProvider = new GhcModProvider(ghcMod, logger);
     return {
         capabilities: {
             // Tell the client that the server works in FULL text document sync mode
@@ -52,87 +58,148 @@ connection.onInitialize((params): InitializeResult => {
     };
 });
 
-// The content of a text document has changed. This event is emitted
-// when the text document first opened or when its content has changed.
-// This event will fire for every key press, but the use of delayers 
-// here means that ghcCheck will only be called ONCE for a file after
-// the delay period with the most recent set of information. It does
-// NOT serve as a queue.
-documents.onDidChangeContent((change) => {
-    let key: string = change.document.uri.toString();
-    let delayer: ThrottledDelayer<void> = documentChangedDelayers[key];
-    if (!delayer) {
-        delayer = new ThrottledDelayer<void>(250);
-        documentChangedDelayers[key] = delayer;
-    }
-    delayer.trigger(() => ghcCheck(change.document));
-});
-
-// The settings interface describe the server relevant settings part
-interface Settings {
-    ghcMod: GhcModSettings;
-}
-
-// These are the example settings we defined in the client's package.json
-// file
-interface GhcModSettings {
+// These are the settings we defined in the client's package.json file
+interface ExtensionSettings {
     maxNumberOfProblems: number;
+    executablePath: string;
+    onHover: string;
+    check: boolean;
+    logLevel: string;
 }
 
-// hold the maxNumberOfProblems setting
-let maxNumberOfProblems: number;
-// The settings have changed. Is send on server activation
-// as well.
+let settings: ExtensionSettings = Object.create({});
+
+// The settings have changed. Is sent on server activation as well.
+// It includes ALL settings. If the user has not set them, the
+// default value will be sent.
 connection.onDidChangeConfiguration((change) => {
-    let settings: Settings = change.settings;
-    maxNumberOfProblems = settings.ghcMod.maxNumberOfProblems || 100;
-    // Revalidate any open text documents
-    documents.all().forEach(ghcCheck);
+    logger.log('haskell.ghcMod configuration changed');
+    let oldSettings = settings;
+    settings = change.settings.haskell.ghcMod;
+
+    logger.setLogLevel(<LogLevel>LogLevel[settings.logLevel]);
+
+    if (oldSettings.executablePath !== settings.executablePath) {
+        initialize();
+    } else if (oldSettings.check !== settings.check ||
+               oldSettings.maxNumberOfProblems !== settings.maxNumberOfProblems) {
+        // Revalidate any open text documents
+        documents.all().forEach(ghcCheck);
+    }
 });
+
+function initialize() {
+    // Shutdown existing provider if it exists
+    if (ghcModProvider) {
+        ghcModProvider.shutdown();
+        ghcModProvider = null;
+    }
+
+    // Disable current listeners
+    connection.onHover(null);
+    documents.onDidChangeContent(null);
+
+    // Create new ghcMod and provider
+    ghcMod = createGhcMod();
+    if (ghcMod) {
+        ghcModProvider = new GhcModProvider(ghcMod, logger);
+    }
+
+    // Initialize listeners if appropriate
+    if (ghcMod && ghcModProvider) {
+        initializeDocumentSync();
+        initializeOnHover();
+    }
+}
+
+function initializeDocumentSync(): void {
+    // The content of a text document has changed. This event is emitted
+    // when the text document first opened or when its content has changed.
+    // This event will fire for every key press, but the use of delayers 
+    // here means that ghcCheck will only be called ONCE for a file after
+    // the delay period with the most recent set of information. It does
+    // NOT serve as a queue.
+    documents.onDidChangeContent((change) => {
+        let key: string = change.document.uri.toString();
+        let delayer: ThrottledDelayer<void> = documentChangedDelayers[key];
+        if (!delayer) {
+            delayer = new ThrottledDelayer<void>(250);
+            documentChangedDelayers[key] = delayer;
+        }
+        delayer.trigger(() => ghcCheck(change.document));
+    });
+}
 
 // onHover can sometimes be called once and sometimes be called
 // multiple times in quick succession so a delayer is used here
 // as well. Unlike above, it wouldn't make sense to use a unique
 // delayer per file as only the most recent hover event matters.
-connection.onHover((documentInfo) => {
-    return hoverDelayer.trigger(() => {
-        return getInfoOrTypeTooltip(documents.get(documentInfo.uri), documentInfo.position);
-    }).then((hover) => { return hover; });
-});
+function initializeOnHover(): void {
+    connection.onHover((documentInfo) => {
+        return hoverDelayer.trigger(() => {
+            return getInfoOrTypeHover(documents.get(documentInfo.uri), documentInfo.position);
+        }).then((hover) => {
+            return hover;
+        });
+    });
+}
 
 connection.onShutdown(() => {
-    // TODO add logging
-    ghcMod.shutdown();
+    if (ghcModProvider) {
+        ghcModProvider.shutdown();
+    }
 });
 
-function getInfoOrTypeTooltip(document: ITextDocument, position: Position): Promise<Hover> {
-    return ghcMod.getInfo(document.getText(), document.uri, position)
-    .then((infoTooltip) => {
-        if (infoTooltip) {
-            return infoTooltip;
+function createGhcMod(): IGhcMod {
+    let options: InteractiveGhcModProcessOptions = {
+        executable: settings.executablePath
+    };
+    return InteractiveGhcModProcess.create(options, logger);
+}
+
+function getInfoOrTypeHover(document: ITextDocument, position: Position): Promise<Hover> {
+    // return immediately if setting is 'none'
+    if (settings.onHover === 'none' || !ghcMod || !ghcModProvider) {
+        return null;
+    }
+
+    return Promise.resolve().then(() => {
+        if (settings.onHover === 'info' || settings.onHover === 'fallback') {
+            return ghcModProvider.getInfo(document.getText(), document.uri, position);
         } else {
-            return ghcMod.getType(document.getText(), document.uri, position);
+            return null;
         }
-    }).then((tooltip) => {
-       return <Hover> {
-           contents: tooltip
-       };
+    }, (reason) => { logger.warn('ghcModProvider.getInfo rejected: ' + reason); })
+    .then((info) => {
+       if (settings.onHover === 'info' || info) {
+           return info;
+       } else {
+           return ghcModProvider.getType(document.getText(), document.uri, position);
+       }
+    }, (reason) => { logger.warn('ghcModProvider.getType rejected: ' + reason); })
+    .then((type) => {
+        return type ? <Hover> {
+            contents: type
+        } : null; // https://github.com/Microsoft/vscode-languageserver-node/issues/18
     });
 }
 
 function ghcCheck(document: ITextDocument): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        ghcMod.doCheck(document.getText(), document.uri).then((diagnostics) => {
-            connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics.slice(0, maxNumberOfProblems) });
-            resolve();
-        }, (err) => {
-            reject(new Error(err));
-        });
+    return Promise.resolve().then(() => {
+        if (!ghcMod || !ghcModProvider || !settings.check) {
+            connection.sendDiagnostics({uri: document.uri, diagnostics: []});
+        } else {
+            ghcModProvider.doCheck(document.getText(), document.uri).then((diagnostics) => {
+                connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics.slice(0, settings.maxNumberOfProblems) });
+            });
+        }
     });
 }
 
 // Unused for now, but this might need changed when
 // using the more advanced ghc-mod options
+// let uritopath = vscode-languageserver.Files.uriToFilePath;
+// or
 // function getNormalizedUri(uri: string): string {
 //     return uri.replace('file:///', '').replace('%3A', ':');
 // }

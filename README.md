@@ -7,7 +7,7 @@ The extension follows the client/server model for language extensions from the [
 To properly run and debug the extension, the `client` and `server` directories should be opened in seperate instances of VS Code.
 
 ## Prerequisites
-The extension assumes `ghc-mod` is installed and on the system PATH. I installed `ghc-mod` on windows via `cabal` using [these instructions][ghc-mod-instructions] and it is working.
+The extension assumes `ghc-mod` is installed and on the system PATH OR is configured via `haskell.ghc-mod.executablePath` in user or workspace settings. I installed `ghc-mod` on windows via `cabal` using [these instructions][ghc-mod-instructions] and it is working.
 
 ## Running the extension
 To get the application running, clone the whole repository and run `npm install` in both the `client` and `server` directories. Then open the `client` folder in an instance of VS Code and press `F5` to start debugging. This will launch the extension in a new instance of VS Code called the extension host.
@@ -33,7 +33,6 @@ There are three main components with distinct responsibilities. `server.ts` is r
 ## Next steps
 - TODO's before public feedback: https://github.com/hoovercj/vscode-ghc-mod/issues/4
 - Add new commands
-- Add configuration
 - Add completion backend
 
 [example-server-docs]: https://code.visualstudio.com/docs/extensions/example-language-server

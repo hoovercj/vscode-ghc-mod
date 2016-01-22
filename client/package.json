@@ -2,6 +2,11 @@
 	"name": "vscode-ghc-mod-client",
 	"description": "VSCode part of a language server for ghc-mod",
 	"author": "Cody Hoover",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hoovercj/vscode-ghc-mod"
+    },
+    "iconUrl": "images/icon.png",
 	"license": "MIT",
 	"version": "0.0.1",
 	"publisher": "hoovercj",
@@ -9,25 +14,59 @@
 		"vscode": "0.10.x"
 	},
 	"categories": [
-		"Other"
+		"Languages"
 	],
 	"activationEvents": [
 		"onLanguage:haskell"
 	],
 	"main": "./out/src/extension",
 	"contributes": {
-		"configuration": {
+        "configuration": {
 			"type": "object",
-			"title": "Example configuration",
+			"title": "Settings for Haskell projects for ghc-mod",
 			"properties": {
-				"ghcMod.maxNumberOfProblems": {
+				"haskell.ghcMod.maxNumberOfProblems": {
 					"type": "number",
 					"default": 100,
-					"description": "Controls the maximum number of problems produced by the server."
-				}
+                    "maximum": 100,
+					"description": "Controls the maximum number of problems reported."
+				},
+				"haskell.ghcMod.executablePath": {
+					"type": "string",
+					"default": "ghc-mod",
+					"description": "The full path to the ghc-mod executable."
+				},
+				"haskell.ghcMod.onHover": {
+					"type": "string",
+                    "enum": [
+                        "info",
+                        "type",
+                        "fallback",
+                        "none"
+                    ],
+					"default": "fallback",
+					"description": "Controls the onHover behavior. 'info' will display ghc-mod info, 'type' will display ghc-mod type, 'fallback' will try info and fallback to type,and 'none' will disable onHover tooltips."
+				},
+                "haskell.ghcMod.check": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Controls whether ghc-mod check is enabled or not" 
+                },
+                "haskell.ghcMod.logLevel": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "log",
+                        "info",
+                        "warn",
+                        "error"
+                    ],
+                    "default": "error",
+                    "description": "Controls the verbosity of logging. Logs can be seen in the console by opening the dev tools."
+                }
 			}
 		}
-	},	
+	},
 	"scripts": {
 		"vscode:prepublish": "node ./node_modules/vscode/bin/compile",
 		"compile": "node ./node_modules/vscode/bin/compile -watch -p ./"

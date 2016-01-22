@@ -4,7 +4,7 @@
  * ------------------------------------------------------------------------------------------ */
 'use strict';
 
-import { ILogger, IGhcModProvider, IGhcMod, GhcModOpts } from './ghcModInterfaces';
+import { ILogger, IGhcModProvider, IGhcMod, GhcModCmdOpts } from './ghcModInterfaces';
 import { DocumentUtils } from './utils/document';
 import {
     Diagnostic, DiagnosticSeverity, Range, Position
@@ -22,7 +22,7 @@ export class GhcModProvider implements IGhcModProvider {
     // GHC-MOD COMMANDS
     public doCheck(text: string, uri: string): Promise<Diagnostic[]> {
         this.logger.log('Do Check: ' + uri);
-        return this.ghcMod.runGhcModCommand(<GhcModOpts>{
+        return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
             command: 'check',
             text: text,
             uri: uri
@@ -32,7 +32,7 @@ export class GhcModProvider implements IGhcModProvider {
     }
 
     public getType(text: string, uri: string, position: Position): Promise<string> {
-        return this.ghcMod.runGhcModCommand(<GhcModOpts>{
+        return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
             command: 'type',
             text: text,
             uri: uri,
@@ -52,7 +52,7 @@ export class GhcModProvider implements IGhcModProvider {
     }
 
     public getInfo(text: string, uri: string, position: Position): Promise<string> {
-        return this.ghcMod.runGhcModCommand(<GhcModOpts>{
+        return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
             command: 'info',
             text: text,
             uri: uri,

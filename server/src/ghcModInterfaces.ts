@@ -1,21 +1,30 @@
 import { Diagnostic, Position } from 'vscode-languageserver';
 
-export interface ILogger {
-    info(message: string): void;
-    log(message: string): void;
-    warn(message: string): void;
-    error(message: string): void;
+export enum LogLevel {
+    none,
+    error,
+    warn,
+    info,
+    log
 }
 
-export interface GhcModOpts {
+export interface ILogger {
+    setLogLevel(level: LogLevel): void;
+    error(message: string): void;
+    warn(message: string): void;
+    log(message: string): void;
+    info(message: string): void;
+}
+
+export interface GhcModCmdOpts {
     command: string;
     text?: string;
-    uri?: string; // Might need normalized in the future via getNormalizedUri()
+    uri?: string;
     args?: string[];
 }
 
 export interface IGhcMod {
-    runGhcModCommand(options: GhcModOpts): Promise<string[]>;
+    runGhcModCommand(options: GhcModCmdOpts): Promise<string[]>;
     killProcess(): void;
 }
 

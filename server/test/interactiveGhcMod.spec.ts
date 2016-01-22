@@ -9,7 +9,7 @@ import * as assert from 'assert';
 
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
-import { IGhcMod, GhcModOpts } from '../src/ghcModInterfaces';
+import { IGhcMod, GhcModCmdOpts } from '../src/ghcModInterfaces';
 import { TestLogger } from './helpers/TestLogger';
 import { InteractiveGhcModProcess } from '../src/interactiveGhcMod';
 
@@ -17,11 +17,11 @@ import { InteractiveGhcModProcess } from '../src/interactiveGhcMod';
 // *******************************************************************************
 // NOTE: Editing this file with wallabyjs running will start too many processes //
 // *******************************************************************************
-describe('InteractiveGhcModProcess', function() {
+describe('InteractiveGhcModProcess', function(): void {
     this.timeout(0);
 
     let logger = new TestLogger();
-    let ghcMod = new InteractiveGhcModProcess(logger);
+    let ghcMod: IGhcMod = InteractiveGhcModProcess.create(null, logger);
 
     after(() => {
         ghcMod.killProcess();
@@ -33,7 +33,7 @@ describe('InteractiveGhcModProcess', function() {
 
             it('should return an empty array for valid files', () => {
                 let uri: string = 'test/fixtures/valid.hs';
-                let opts = <GhcModOpts>{
+                let opts = <GhcModCmdOpts>{
                     command: 'check',
                     uri: uri
                 };
@@ -44,7 +44,7 @@ describe('InteractiveGhcModProcess', function() {
 
             it('should return messages without severity in an expected format', () => {
                 let uri: string = 'test/fixtures/empty.hs';
-                let opts = <GhcModOpts>{
+                let opts = <GhcModCmdOpts>{
                     command: 'check',
                     uri: uri
                 };
@@ -56,7 +56,7 @@ describe('InteractiveGhcModProcess', function() {
 
             it('should return warnings in an expected format', () => {
                 let uri: string = 'test/fixtures/type.hs';
-                let opts = <GhcModOpts>{
+                let opts = <GhcModCmdOpts>{
                     command: 'check',
                     uri: uri
                 };
@@ -70,7 +70,7 @@ describe('InteractiveGhcModProcess', function() {
         describe('Type command', () => {
             it('should return the expected output', () => {
                 let uri: string = 'test/fixtures/type.hs';
-                let opts = <GhcModOpts>{
+                let opts = <GhcModCmdOpts>{
                     command: 'type',
                     uri: uri,
                     args: ['3', '8']
@@ -88,7 +88,7 @@ describe('InteractiveGhcModProcess', function() {
         describe('Info command', () => {
             it('should return "Cannot show info" if info unavailable', () => {
                 let uri: string = 'test/fixtures/type.hs';
-                let opts = <GhcModOpts>{
+                let opts = <GhcModCmdOpts>{
                     command: 'info',
                     uri: uri,
                     args: ['bogus']
@@ -101,7 +101,7 @@ describe('InteractiveGhcModProcess', function() {
 
             it('should return info if available', () => {
                 let uri: string = 'test/fixtures/type.hs';
-                let opts = <GhcModOpts>{
+                let opts = <GhcModCmdOpts>{
                     command: 'info',
                     uri: uri,
                     args: ['Num']

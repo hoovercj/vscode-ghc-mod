@@ -1,4 +1,4 @@
-import { IGhcMod, GhcModOpts } from '../../src/ghcModInterfaces';
+import { IGhcMod, GhcModCmdOpts } from '../../src/ghcModInterfaces';
 
 export class TestGhcMod implements IGhcMod {
 
@@ -8,7 +8,7 @@ export class TestGhcMod implements IGhcMod {
         this.commandResults = commandResults;
     }
 
-    public runGhcModCommand(options: GhcModOpts): Promise<string[]> {
+    public runGhcModCommand(options: GhcModCmdOpts): Promise<string[]> {
         return Promise.resolve(this.commandResults);
     }
 

@@ -21,7 +21,7 @@ export function activate(context: ExtensionContext) {
     let serverOptions: ServerOptions = {
         run : { module: serverModule, transport: TransportKind.ipc },
         debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
-    }
+    };
 
     // Options to control the language client
     let clientOptions: LanguageClientOptions = {
@@ -29,9 +29,9 @@ export function activate(context: ExtensionContext) {
         documentSelector: ['haskell'],
         synchronize: {
             // Synchronize the setting section 'ghcMod' to the server
-            configurationSection: 'ghcMod'
+            configurationSection: 'haskell.ghcMod'
         }
-    }
+    };
 
     // Create the language client and start the client.
     let disposable = new LanguageClient('ghc-mod server', serverOptions, clientOptions).start();
