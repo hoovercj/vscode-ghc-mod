@@ -1,56 +1,62 @@
 {
-	"name": "vscode-ghc-mod-client",
-	"description": "VSCode part of a language server for ghc-mod",
-	"author": "Cody Hoover",
+    "name": "vscode-ghc-mod",
+    "displayName": "Haskell ghc-mod",
+    "description": "Provides language support via ghc-mod in VS Code",
+    "author": "Cody Hoover",
     "repository": {
         "type": "git",
-        "url": "https://github.com/hoovercj/vscode-ghc-mod"
+        "url": "https://github.com/hoovercj/vscode-ghc-mod.git"
     },
-    "iconUrl": "images/icon.png",
-	"license": "MIT",
-	"version": "0.0.1",
-	"publisher": "hoovercj",
-	"engines": {
-		"vscode": "0.10.x"
-	},
-	"categories": [
-		"Languages"
-	],
-	"activationEvents": [
-		"onLanguage:haskell"
-	],
-	"main": "./out/src/extension",
-	"contributes": {
+    "bugs": {
+        "url": "https://github.com/hoovercj/vscode-ghc-mod/issues"
+    },
+    "homepage": "https://github.com/hoovercj/vscode-gh-mod",
+    "icon": "images/icon.png",
+    "license": "MIT",
+    "version": "0.1.0",
+    "publisher": "hoovercj",
+    "engines": {
+        "vscode": "0.10.x"
+    },
+    "categories": [
+        "Linters",
+        "Languages"
+    ],
+    "activationEvents": [
+        "onLanguage:haskell"
+    ],
+    "main": "./out/src/extension",
+    "contributes": {
         "configuration": {
-			"type": "object",
-			"title": "Settings for Haskell projects for ghc-mod",
-			"properties": {
-				"haskell.ghcMod.maxNumberOfProblems": {
-					"type": "number",
-					"default": 100,
+            "type": "object",
+            "title": "Settings for Haskell projects for ghc-mod",
+            "properties": {
+                "haskell.ghcMod.maxNumberOfProblems": {
+                    "type": "number",
+                    "default": 100,
                     "maximum": 100,
-					"description": "Controls the maximum number of problems reported."
-				},
-				"haskell.ghcMod.executablePath": {
-					"type": "string",
-					"default": "ghc-mod",
-					"description": "The full path to the ghc-mod executable."
-				},
-				"haskell.ghcMod.onHover": {
-					"type": "string",
+                    "description": "Controls the maximum number of problems reported."
+                },
+                "haskell.ghcMod.executablePath": {
+                    "type": "string",
+                    "default": "ghc-mod",
+                    "description": "The full path to the ghc-mod executable."
+                },
+                "haskell.ghcMod.onHover": {
+                    "type": "string",
                     "enum": [
                         "info",
                         "type",
                         "fallback",
                         "none"
                     ],
-					"default": "fallback",
-					"description": "Controls the onHover behavior. 'info' will display ghc-mod info, 'type' will display ghc-mod type, 'fallback' will try info and fallback to type,and 'none' will disable onHover tooltips."
-				},
+                    "default": "fallback",
+                    "description": "Controls the onHover behavior. 'info' will display ghc-mod info, 'type' will display ghc-mod type, 'fallback' will try info and fallback to type,and 'none' will disable onHover tooltips."
+                },
                 "haskell.ghcMod.check": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Controls whether ghc-mod check is enabled or not" 
+                    "description": "Controls whether ghc-mod check is enabled or not"
                 },
                 "haskell.ghcMod.logLevel": {
                     "type": "string",
@@ -64,18 +70,18 @@
                     "default": "error",
                     "description": "Controls the verbosity of logging. Logs can be seen in the console by opening the dev tools."
                 }
-			}
-		}
-	},
-	"scripts": {
-		"vscode:prepublish": "node ./node_modules/vscode/bin/compile",
-		"compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
-	},
-	"devDependencies": {
-		"typescript": "^1.6.2",
-		"vscode": "0.10.x"
-	},
-	"dependencies": {
-		"vscode-languageclient": "^1.1.0"
-	}
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
+        "compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
+    },
+    "devDependencies": {
+        "typescript": "^1.6.2",
+        "vscode": "0.10.x"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^1.1.0"
+    }
 }
