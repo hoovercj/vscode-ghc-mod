@@ -8,7 +8,8 @@ import {
     IPCMessageReader, IPCMessageWriter,
     createConnection, IConnection,
     TextDocuments, ITextDocument,
-    Position, InitializeResult, Hover
+    Position, InitializeResult, Hover,
+    MarkedString
 } from 'vscode-languageserver';
 
 // Interface between VS Code extension and GHC-Mod api
@@ -179,7 +180,7 @@ function getInfoOrTypeHover(document: ITextDocument, position: Position): Promis
     }, (reason) => { logger.warn('ghcModProvider.getType rejected: ' + reason); })
     .then((type) => {
         return type ? <Hover> {
-            contents: type
+            contents: <MarkedString>{ language: 'haskell', value: type }
         } : null; // https://github.com/Microsoft/vscode-languageserver-node/issues/18
     });
 }
