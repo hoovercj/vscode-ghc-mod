@@ -9,8 +9,10 @@ import {
     createConnection, IConnection,
     TextDocuments, ITextDocument,
     Position, InitializeResult, Hover,
-    MarkedString
+    MarkedString, Files
 } from 'vscode-languageserver';
+
+let uriToFilePath = Files.uriToFilePath;
 
 // Interface between VS Code extension and GHC-Mod api
 import { IGhcMod, IGhcModProvider, LogLevel, ILogger } from './ghcModInterfaces';
@@ -121,7 +123,7 @@ function initializeDocumentSync(): void {
     // the delay period with the most recent set of information. It does
     // NOT serve as a queue.
     documents.onDidChangeContent((change) => {
-        let key: string = change.document.uri.toString();
+        let key: string = uriToFilePath(change.document.uri);
         let delayer: ThrottledDelayer<void> = documentChangedDelayers[key];
         if (!delayer) {
             delayer = new ThrottledDelayer<void>(250);
@@ -166,7 +168,7 @@ function getInfoOrTypeHover(document: ITextDocument, position: Position): Promis
 
     return Promise.resolve().then(() => {
         if (settings.onHover === 'info' || settings.onHover === 'fallback') {
-            return ghcModProvider.getInfo(document.getText(), document.uri, position);
+            return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), position);
         } else {
             return null;
         }
@@ -175,7 +177,7 @@ function getInfoOrTypeHover(document: ITextDocument, position: Position): Promis
        if (settings.onHover === 'info' || info) {
            return info;
        } else {
-           return ghcModProvider.getType(document.getText(), document.uri, position);
+           return ghcModProvider.getType(document.getText(), uriToFilePath(document.uri), position);
        }
     }, (reason) => { logger.warn('ghcModProvider.getType rejected: ' + reason); })
     .then((type) => {
@@ -190,7 +192,7 @@ function ghcCheck(document: ITextDocument): Promise<void> {
         if (!ghcMod || !ghcModProvider || !settings.check) {
             connection.sendDiagnostics({uri: document.uri, diagnostics: []});
         } else {
-            ghcModProvider.doCheck(document.getText(), document.uri).then((diagnostics) => {
+            ghcModProvider.doCheck(document.getText(), uriToFilePath(document.uri)).then((diagnostics) => {
                 connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics.slice(0, settings.maxNumberOfProblems) });
             });
         }
@@ -199,6 +201,7 @@ function ghcCheck(document: ITextDocument): Promise<void> {
 
 // Unused for now, but this might need changed when
 // using the more advanced ghc-mod options
+// import * as test from 'vscode-languageserver';
 // let uritopath = vscode-languageserver.Files.uriToFilePath;
 // or
 // function getNormalizedUri(uri: string): string {
