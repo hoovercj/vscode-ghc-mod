@@ -7,25 +7,29 @@
 import { ILogger, IGhcModProvider, IGhcMod, GhcModCmdOpts } from './ghcModInterfaces';
 import { DocumentUtils } from './utils/document';
 import {
-    Diagnostic, DiagnosticSeverity, Range, Position
+    Diagnostic, DiagnosticSeverity, Range, Position, Location
 } from 'vscode-languageserver';
 
-export class GhcModProvider implements IGhcModProvider {
+let Path = require('path');
+
+export class GhcModProvider implements IGhcModProvider
+ {
     private ghcMod: IGhcMod;
     private logger: ILogger;
+    private workspaceRoot: string;
 
-    constructor(ghcMod: IGhcMod, logger: ILogger) {
-        this.logger = logger;
+    constructor(ghcMod: IGhcMod, workspaceRoot: string, logger: ILogger) {
         this.ghcMod = ghcMod;
+        this.workspaceRoot = workspaceRoot;
+        this.logger = logger;
     }
 
     // GHC-MOD COMMANDS
     public doCheck(text: string, uri: string): Promise<Diagnostic[]> {
-        this.logger.log('Do Check: ' + uri);
         return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
             command: 'check',
             text: text,
-            uri: uri
+            uri: this.getRelativePath(uri)
         }).then((lines) => {
             return this.parseCheckDiagnostics(lines);
         });
@@ -35,7 +39,7 @@ export class GhcModProvider implements IGhcModProvider {
         return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
             command: 'type',
             text: text,
-            uri: uri,
+            uri: this.getRelativePath(uri),
             args: [(position.line + 1).toString(), (position.character + 1).toString()]
         }).then((lines) => {
             // Returns results starting with most narrow range
@@ -55,7 +59,7 @@ export class GhcModProvider implements IGhcModProvider {
         return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
             command: 'info',
             text: text,
-            uri: uri,
+            uri: this.getRelativePath(uri),
             args: [DocumentUtils.getWordAtPosition(text, position)]
         }).then((lines) => {
             let tooltip = lines.join('\n');
@@ -71,7 +75,45 @@ export class GhcModProvider implements IGhcModProvider {
         this.ghcMod.killProcess();
     }
 
+    public getDefinitionLocation(text: string, uri: string, position: Position, root: string): Promise<Location | Location[]> {
+        return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
+            command: 'info',
+            text: null,
+            uri: this.getRelativePath(uri),
+            args: [DocumentUtils.getWordAtPosition(text, position)]
+        }).then((lines) => {
+            return this.parseInfoForDefinition(lines.join('\n'), root);
+        });
+    }
+
     // PRIVATE METHODS
+    private parseInfoForDefinition(text: string, root): Location[] {
+        let regex = /Defined at (.+?):(\d+):(\d+)/g;
+        let match;
+        let locations: Location[] = [];
+        do {
+            match = regex.exec(text);
+            if (match) {
+                let uri = this.filepathToUri(<string>match[1]);
+                let range = Range.create(parseInt(match[2], 10) - 1, parseInt(match[3], 10) - 1,
+                                         parseInt(match[2], 10) - 1, parseInt(match[3], 10) - 1);
+                locations.push(Location.create(uri, range));
+            }
+        } while (match);
+        return locations;
+    }
+
+    private filepathToUri(filepath: string): string {
+        if (!Path.isAbsolute(filepath)) {
+            filepath = Path.join(this.workspaceRoot, filepath);
+        }
+        return `file:///${filepath.replace('\\', '/')}`;
+    }
+
+    private getRelativePath(filepath: string): string {
+        return Path.relative(this.workspaceRoot, filepath);
+    }
+
     private parseTypeInfo(line: string, position: Position): string {
         // Example line: 4 1 4 17 "a -> a" 
         let tokens = line.split('"');
@@ -98,7 +140,6 @@ export class GhcModProvider implements IGhcModProvider {
         lines.forEach((line) => {
             let match = line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/);
             if (match) {
-                this.logger.log('Diagnostic in:' + match[1]);
                 diagnostics.push({
                     severity: match[4] === 'Warning' ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
                     range: {

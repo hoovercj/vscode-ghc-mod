@@ -56,7 +56,8 @@ connection.onInitialize((params): InitializeResult => {
         capabilities: {
             // Tell the client that the server works in FULL text document sync mode
             hoverProvider: true,
-            textDocumentSync: documents.syncKind
+            textDocumentSync: documents.syncKind,
+            definitionProvider: true
         }
     };
 });
@@ -105,13 +106,16 @@ function initialize() {
     // Create new ghcMod and provider
     ghcMod = createGhcMod();
     if (ghcMod) {
-        ghcModProvider = new GhcModProvider(ghcMod, logger);
+        ghcModProvider = new GhcModProvider(ghcMod, workspaceRoot, logger);
     }
 
     // Initialize listeners if appropriate
     if (ghcMod && ghcModProvider) {
         initializeDocumentSync();
         initializeOnHover();
+        initializeOnDefinition();
+    } else {
+        connection.onDefinition(null);
     }
 }
 
@@ -147,6 +151,17 @@ function initializeOnHover(): void {
     });
 }
 
+function initializeOnDefinition(): void {
+    connection.onDefinition((documentInfo): any => {
+        let document = documents.get(documentInfo.uri);
+        return ghcModProvider.getDefinitionLocation(
+            document.getText(),
+            uriToFilePath(document.uri),
+            documentInfo.position,
+            workspaceRoot);
+    });
+}
+
 connection.onShutdown(() => {
     if (ghcModProvider) {
         ghcModProvider.shutdown();
@@ -155,7 +170,8 @@ connection.onShutdown(() => {
 
 function createGhcMod(): IGhcMod {
     let options: InteractiveGhcModProcessOptions = {
-        executable: settings.executablePath
+        executable: settings.executablePath,
+        rootPath: workspaceRoot
     };
     return InteractiveGhcModProcess.create(options, logger);
 }
