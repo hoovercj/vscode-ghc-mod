@@ -12,7 +12,7 @@ export class DocumentUtils {
             if (endPosition < 0) {
                 endPosition = line.length;
             }
-            let ret = line.slice(startPosition, endPosition).replace(/[()]/, '');
+            let ret = line.slice(startPosition, endPosition).replace(/[(),]/, '');
             return ret;
         }
         return '';

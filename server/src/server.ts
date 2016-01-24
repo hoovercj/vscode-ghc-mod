@@ -130,7 +130,9 @@ function initializeDocumentSync(): void {
         let key: string = uriToFilePath(change.document.uri);
         let delayer: ThrottledDelayer<void> = documentChangedDelayers[key];
         if (!delayer) {
-            delayer = new ThrottledDelayer<void>(250);
+            // This is so check will work with auto-save
+            delayer = new ThrottledDelayer<void>(1000);
+            // delayer = new ThrottledDelayer<void>(250);
             documentChangedDelayers[key] = delayer;
         }
         delayer.trigger(() => ghcCheck(change.document));

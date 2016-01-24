@@ -62,7 +62,7 @@ export class GhcModProvider implements IGhcModProvider
             uri: this.getRelativePath(uri),
             args: [DocumentUtils.getWordAtPosition(text, position)]
         }).then((lines) => {
-            let tooltip = lines.join('\n');
+            let tooltip = lines.join('\n').replace(/-- Defined at (.+?):(\d+):(\d+)/g, '');
             if (tooltip.indexOf('Cannot show info') === -1) {
                 return tooltip;
             } else {
@@ -88,7 +88,7 @@ export class GhcModProvider implements IGhcModProvider
 
     // PRIVATE METHODS
     private parseInfoForDefinition(text: string, root): Location[] {
-        let regex = /Defined at (.+?):(\d+):(\d+)/g;
+        let regex = /-- Defined at (.+?):(\d+):(\d+)/g;
         let match;
         let locations: Location[] = [];
         do {
