@@ -1,22 +1,31 @@
 # vscode-ghc-mod
-This exension exposes ghc-mod functionality to VS Code. It requires having ghc-mod installed. I installed it on Windows via `cabal` using [these instructions][ghc-mod-instructions] and it is working.
+This exension exposes ghc-mod functionality to VS Code. It requires having ghc-mod installed. I installed it on Windows via `cabal` using [these instructions][ghc-mod-instructions] and it is working. Hasn't been tested on Linux or OSX.
 
-It currently supports `check` on the fly and `type` and `info` when hovering the mouse.
+Features:
+- `check`: Only works when a file is saved so this works best with autosave on.
+- `type` and `info`: Displayed when hovering the mouse over a symbol. See below for configuration.
+- `Go to definition`: ctrl+click, press f12, or right-click -> "Peek/Go to definition" 
 
 For linting, please use the [haskell-linter extension][haskell-linter-extension].
 
 ## Pictures
 ### Check
-Example 1:
-![Check](images/check.png)
+Example 1:  
+![Check](images/check.png)  
 Example 2:  
-![Check2](images/check2.png)
+![Check2](images/check2.png)  
 
 ### Info
-![Info](images/info.png)
+Example 1:  
+![Info](images/info.png)  
+Example 2:  
+![Info2](images/info2.png)  
 
 ### Type
 ![Type](images/type.png)
+
+### Go To Definition
+![Definition](images/definition.png)
 
 ## Configuration:
 The following options can be set in workspace or user preferences:
@@ -61,6 +70,12 @@ The following options can be set in workspace or user preferences:
     "description": "Controls the verbosity of logging. Logs can be seen in the console by opening the dev tools."
 }
 ```
+
+## Changelog
+__0.2.0__
+- __Breaking:__ Files must be saved (auto-save is your friend)
+- Type and Info tooltips are now more colorful (treated as code)
+- Go To Definition works
 
 [ghc-mod-instructions]: http://www.mew.org/~kazu/proj/ghc-mod/en/install.html
 [haskell-linter-extension]: https://marketplace.visualstudio.com/items/hoovercj.haskell-linter

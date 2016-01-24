@@ -1,4 +1,4 @@
-import { Diagnostic, Position } from 'vscode-languageserver';
+import { Diagnostic, Position, Location } from 'vscode-languageserver';
 
 export enum LogLevel {
     none,
@@ -32,5 +32,6 @@ export interface IGhcModProvider {
     doCheck(text: string, uri: string): Promise<Diagnostic[]>;
     getType(text: string, uri: string, position: Position): Promise<string>;
     getInfo(text: string, uri: string, position: Position): Promise<string>;
+    getDefinitionLocation(text: string, uri: string, position: Position, root: string): Promise<Location[]>;
     shutdown(): void;
 }

@@ -12,7 +12,7 @@ describe('GhcModProvider', () => {
             let ghcModOutput = ['OK'];
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod, '', logger);
             return provider.doCheck(null, null).then((diagnostics) => {
                 assert.equal(diagnostics.length, 0);
             });
@@ -25,7 +25,7 @@ describe('GhcModProvider', () => {
                 'A.hs:5:15:Not in scope: `c`'];
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod, '', logger);
             return provider.doCheck(null, null).then((diagnostics) => {
                 assert.equal(diagnostics.length, 3);
             });
@@ -35,7 +35,7 @@ describe('GhcModProvider', () => {
             let ghcModOutput = ['A.hs:5:7:Not in scope: `a`'];
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod, '', logger);
             return provider.doCheck(null, null).then((diagnostics) => {
                 assert.equal(diagnostics[0].message, 'Not in scope: `a`');
             });
@@ -46,7 +46,7 @@ describe('GhcModProvider', () => {
             let range = Range.create(4, 6, 4, 6);
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod, '', logger);
             return provider.doCheck(null, null).then((diagnostics) => {
                 assert.deepEqual(diagnostics[0].range, range);
             });
@@ -56,7 +56,7 @@ describe('GhcModProvider', () => {
             let ghcModOutput = ['A.hs:5:7:Not in scope: `a`'];
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod,  '', logger);
             return provider.doCheck(null, null).then((diagnostics) => {
                 assert.equal(diagnostics[0].severity, DiagnosticSeverity.Error);
             });
@@ -66,7 +66,7 @@ describe('GhcModProvider', () => {
             let ghcModOutput = ['A.hs:5:7:Warning: Not in scope: `a`'];
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod,  '', logger);
             return provider.doCheck(null, null).then((diagnostics) => {
                 assert.equal(diagnostics[0].severity, DiagnosticSeverity.Warning);
             });
@@ -80,7 +80,7 @@ describe('GhcModProvider', () => {
             let position = Position.create(0, 5);
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod,  '', logger );
             return provider.getType(null, null, position).then((type) => {
                 assert.equal(type, expectedType);
             });
@@ -96,7 +96,7 @@ describe('GhcModProvider', () => {
             let position = Position.create(0, 5);
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod,  '', logger );
             return provider.getType(null, null, position).then((type) => {
                 assert.equal(type, expectedType);
             });
@@ -111,7 +111,7 @@ describe('GhcModProvider', () => {
             let position = Position.create(1, 5);
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod,  '', logger );
             return provider.getType(null, null, position).then((type) => {
                 assert.equal(type, '');
             });
@@ -122,7 +122,7 @@ describe('GhcModProvider', () => {
             let position = Position.create(0, 5);
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod([]);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod,  '', logger );
             return provider.getType(null, null, position).then((type) => {
                 assert.equal(type, expectedType);
             });
@@ -135,7 +135,7 @@ describe('GhcModProvider', () => {
             let position = Position.create(0, 5);
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod,  '', logger );
             return provider.getInfo(null, null, position).then((info) => {
                 assert.equal(info, 'Symbol\nInfo');
             });
@@ -146,7 +146,7 @@ describe('GhcModProvider', () => {
             let position = Position.create(0, 5);
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
-            let provider: IGhcModProvider = new GhcModProvider(ghcMod, logger);
+            let provider: IGhcModProvider = new GhcModProvider(ghcMod,  '', logger );
             return provider.getType(null, null, position).then((info) => {
                 assert.equal(info, '');
             });

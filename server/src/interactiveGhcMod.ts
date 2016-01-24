@@ -14,6 +14,7 @@ let promiseQueue = require('promise-queue');
 // *******************************************************************************
 export interface InteractiveGhcModProcessOptions {
     executable: string;
+    rootPath: string;
 }
 
 export class InteractiveGhcModProcess implements IGhcMod {
@@ -22,13 +23,13 @@ export class InteractiveGhcModProcess implements IGhcMod {
     private childProcess: cp.ChildProcess;
     private logger: ILogger;
     private queue: any = new promiseQueue(1);
-    private executable: string;
+    private options: InteractiveGhcModProcessOptions;
 
     public static create(options: InteractiveGhcModProcessOptions, logger: ILogger): InteractiveGhcModProcess {
         let defaultOptions: InteractiveGhcModProcessOptions = {
-            executable: 'ghc-mod'
+            executable: 'ghc-mod',
+            rootPath: ''
         };
-        options = options || { executable: defaultOptions.executable };
 
         // Make sure executable path can be executed. 
         try {
@@ -39,7 +40,7 @@ export class InteractiveGhcModProcess implements IGhcMod {
         }
 
         let ret = new InteractiveGhcModProcess();
-        ret.executable = options.executable;
+        ret.options = options || { executable: defaultOptions.executable, rootPath: defaultOptions.rootPath };
         ret.logger = logger;
         // Start process, otherwise hover takes a while to work
         ret.spawnProcess();
@@ -132,7 +133,7 @@ export class InteractiveGhcModProcess implements IGhcMod {
         }
         let errorDelayer = new ThrottledDelayer<void>(100);
         let errorLines: string[] = [];
-        this.childProcess = cp.spawn(this.executable, ['legacy-interactive']);
+        this.childProcess = cp.spawn(this.options.executable, ['legacy-interactive'], { cwd: this.options.rootPath });
         this.childProcess.on('error', (err) => {
             this.logger.error(`Error spawning ghc-mod process - ${err}`);
         });
@@ -157,11 +158,13 @@ export class InteractiveGhcModProcess implements IGhcMod {
     private mapFile(process: cp.ChildProcess, options: GhcModCmdOpts): Promise<string[]> {
         // options.text represents the haskell file relevant to the command
         // In case it has not been saved, map the file to the text first
-        return !options.text ? Promise.resolve([]) : this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
+        return Promise.resolve([]);
+        // return !options.text ? Promise.resolve([]) : this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
     }
 
     private unmapFile(process: cp.ChildProcess, options: GhcModCmdOpts): Promise<string[]> {
-        return !options.text ? Promise.resolve([]) : this.interact(process, `unmap-file ${options.uri}${EOL}`);
+        return Promise.resolve([]);
+        // return !options.text ? Promise.resolve([]) : this.interact(process, `unmap-file ${options.uri}${EOL}`);
     }
 
     private commandAndArgsAsString(options: GhcModCmdOpts): string {

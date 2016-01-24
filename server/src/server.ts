@@ -8,8 +8,11 @@ import {
     IPCMessageReader, IPCMessageWriter,
     createConnection, IConnection,
     TextDocuments, ITextDocument,
-    Position, InitializeResult, Hover
+    Position, InitializeResult, Hover,
+    MarkedString, Files
 } from 'vscode-languageserver';
+
+let uriToFilePath = Files.uriToFilePath;
 
 // Interface between VS Code extension and GHC-Mod api
 import { IGhcMod, IGhcModProvider, LogLevel, ILogger } from './ghcModInterfaces';
@@ -53,7 +56,8 @@ connection.onInitialize((params): InitializeResult => {
         capabilities: {
             // Tell the client that the server works in FULL text document sync mode
             hoverProvider: true,
-            textDocumentSync: documents.syncKind
+            textDocumentSync: documents.syncKind,
+            definitionProvider: true
         }
     };
 });
@@ -102,13 +106,16 @@ function initialize() {
     // Create new ghcMod and provider
     ghcMod = createGhcMod();
     if (ghcMod) {
-        ghcModProvider = new GhcModProvider(ghcMod, logger);
+        ghcModProvider = new GhcModProvider(ghcMod, workspaceRoot, logger);
     }
 
     // Initialize listeners if appropriate
     if (ghcMod && ghcModProvider) {
         initializeDocumentSync();
         initializeOnHover();
+        initializeOnDefinition();
+    } else {
+        connection.onDefinition(null);
     }
 }
 
@@ -120,10 +127,12 @@ function initializeDocumentSync(): void {
     // the delay period with the most recent set of information. It does
     // NOT serve as a queue.
     documents.onDidChangeContent((change) => {
-        let key: string = change.document.uri.toString();
+        let key: string = uriToFilePath(change.document.uri);
         let delayer: ThrottledDelayer<void> = documentChangedDelayers[key];
         if (!delayer) {
-            delayer = new ThrottledDelayer<void>(250);
+            // This is so check will work with auto-save
+            delayer = new ThrottledDelayer<void>(1000);
+            // delayer = new ThrottledDelayer<void>(250);
             documentChangedDelayers[key] = delayer;
         }
         delayer.trigger(() => ghcCheck(change.document));
@@ -144,6 +153,17 @@ function initializeOnHover(): void {
     });
 }
 
+function initializeOnDefinition(): void {
+    connection.onDefinition((documentInfo): any => {
+        let document = documents.get(documentInfo.uri);
+        return ghcModProvider.getDefinitionLocation(
+            document.getText(),
+            uriToFilePath(document.uri),
+            documentInfo.position,
+            workspaceRoot);
+    });
+}
+
 connection.onShutdown(() => {
     if (ghcModProvider) {
         ghcModProvider.shutdown();
@@ -152,7 +172,8 @@ connection.onShutdown(() => {
 
 function createGhcMod(): IGhcMod {
     let options: InteractiveGhcModProcessOptions = {
-        executable: settings.executablePath
+        executable: settings.executablePath,
+        rootPath: workspaceRoot
     };
     return InteractiveGhcModProcess.create(options, logger);
 }
@@ -165,7 +186,7 @@ function getInfoOrTypeHover(document: ITextDocument, position: Position): Promis
 
     return Promise.resolve().then(() => {
         if (settings.onHover === 'info' || settings.onHover === 'fallback') {
-            return ghcModProvider.getInfo(document.getText(), document.uri, position);
+            return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), position);
         } else {
             return null;
         }
@@ -174,12 +195,12 @@ function getInfoOrTypeHover(document: ITextDocument, position: Position): Promis
        if (settings.onHover === 'info' || info) {
            return info;
        } else {
-           return ghcModProvider.getType(document.getText(), document.uri, position);
+           return ghcModProvider.getType(document.getText(), uriToFilePath(document.uri), position);
        }
     }, (reason) => { logger.warn('ghcModProvider.getType rejected: ' + reason); })
     .then((type) => {
         return type ? <Hover> {
-            contents: type
+            contents: <MarkedString>{ language: 'haskell', value: type }
         } : null; // https://github.com/Microsoft/vscode-languageserver-node/issues/18
     });
 }
@@ -189,7 +210,7 @@ function ghcCheck(document: ITextDocument): Promise<void> {
         if (!ghcMod || !ghcModProvider || !settings.check) {
             connection.sendDiagnostics({uri: document.uri, diagnostics: []});
         } else {
-            ghcModProvider.doCheck(document.getText(), document.uri).then((diagnostics) => {
+            ghcModProvider.doCheck(document.getText(), uriToFilePath(document.uri)).then((diagnostics) => {
                 connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics.slice(0, settings.maxNumberOfProblems) });
             });
         }
@@ -198,6 +219,7 @@ function ghcCheck(document: ITextDocument): Promise<void> {
 
 // Unused for now, but this might need changed when
 // using the more advanced ghc-mod options
+// import * as test from 'vscode-languageserver';
 // let uritopath = vscode-languageserver.Files.uriToFilePath;
 // or
 // function getNormalizedUri(uri: string): string {
