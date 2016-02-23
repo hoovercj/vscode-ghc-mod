@@ -56,19 +56,27 @@ export class GhcModProvider implements IGhcModProvider
     }
 
     public getInfo(text: string, uri: string, position: Position): Promise<string> {
-        return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
-            command: 'info',
-            text: text,
-            uri: this.getRelativePath(uri),
-            args: [DocumentUtils.getWordAtPosition(text, position)]
-        }).then((lines) => {
-            let tooltip = lines.join('\n').replace(/-- Defined at (.+?):(\d+):(\d+)/g, '');
-            if (tooltip.indexOf('Cannot show info') === -1) {
-                return tooltip;
-            } else {
-                return '';
-            }
-        });
+        let word = DocumentUtils.getWordAtPosition(text, position);
+        if(word != "") {
+            return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
+                command: 'info',
+                text: text,
+                uri: this.getRelativePath(uri),
+                args: [word]
+            }).then((lines) => {
+                let tooltip = lines.join('\n').replace(/-- Defined at (.+?):(\d+):(\d+)/g, '');
+                if (tooltip.indexOf('Cannot show info') === -1) {
+                    return tooltip;
+                } else {
+                    return '';
+                }
+            });
+        } else {
+            return new Promise((resolve, reject) => {
+                resolve('');
+            });
+        }
+                
     }
 
     public shutdown(): void {
