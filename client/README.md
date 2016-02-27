@@ -72,7 +72,10 @@ The following options can be set in workspace or user preferences:
 ```
 
 ## Changelog
-__0.2.0__
+__0.2.2__  
+- fix a ghc crash bug on mac when word is empty string (thanks @slepher)
+
+__0.2.0__  
 - __Breaking:__ Files must be saved (auto-save is your friend)
 - Type and Info tooltips are now more colorful (treated as code)
 - Go To Definition works
