@@ -57,6 +57,12 @@ export class GhcModProvider implements IGhcModProvider
 
     public getInfo(text: string, uri: string, position: Position): Promise<string> {
         let word = DocumentUtils.getWordAtPosition(text, position);
+        
+        // Fix for https://github.com/hoovercj/vscode-ghc-mod/issues/11
+        if (word == "->") {
+            word = "(->)";
+        }
+        
         if(word != "") {
             return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
                 command: 'info',

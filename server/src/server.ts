@@ -7,7 +7,7 @@
 import {
     IPCMessageReader, IPCMessageWriter,
     createConnection, IConnection,
-    TextDocuments, ITextDocument,
+    TextDocuments, TextDocument,
     Position, InitializeResult, Hover,
     MarkedString, Files
 } from 'vscode-languageserver';
@@ -146,7 +146,7 @@ function initializeDocumentSync(): void {
 function initializeOnHover(): void {
     connection.onHover((documentInfo) => {
         return hoverDelayer.trigger(() => {
-            return getInfoOrTypeHover(documents.get(documentInfo.uri), documentInfo.position);
+            return getInfoOrTypeHover(documents.get(documentInfo.textDocument.uri), documentInfo.position);
         }).then((hover) => {
             return hover;
         });
@@ -155,7 +155,7 @@ function initializeOnHover(): void {
 
 function initializeOnDefinition(): void {
     connection.onDefinition((documentInfo): any => {
-        let document = documents.get(documentInfo.uri);
+        let document = documents.get(documentInfo.textDocument.uri);
         return ghcModProvider.getDefinitionLocation(
             document.getText(),
             uriToFilePath(document.uri),
@@ -178,7 +178,7 @@ function createGhcMod(): IGhcMod {
     return InteractiveGhcModProcess.create(options, logger);
 }
 
-function getInfoOrTypeHover(document: ITextDocument, position: Position): Promise<Hover> {
+function getInfoOrTypeHover(document: TextDocument, position: Position): Promise<Hover> {
     // return immediately if setting is 'none'
     if (settings.onHover === 'none' || !ghcMod || !ghcModProvider) {
         return null;
@@ -205,7 +205,7 @@ function getInfoOrTypeHover(document: ITextDocument, position: Position): Promis
     });
 }
 
-function ghcCheck(document: ITextDocument): Promise<void> {
+function ghcCheck(document: TextDocument): Promise<void> {
     return Promise.resolve().then(() => {
         if (!ghcMod || !ghcModProvider || !settings.check) {
             connection.sendDiagnostics({uri: document.uri, diagnostics: []});
