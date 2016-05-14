@@ -10,16 +10,16 @@ For linting, please use the [haskell-linter extension][haskell-linter-extension]
 
 ## Pictures
 ### Check
-Example 1:
-![Check](images/check.png)
-Example 2:
-![Check2](images/check2.png)
+Example 1:  
+![Check](images/check.png)  
+Example 2:  
+![Check2](images/check2.png)  
 
 ### Info
-Example 1:
-![Info](images/info.png)
-Example 2:
-![Info2](images/info2.png)
+Example 1:  
+![Info](images/info.png)  
+Example 2:  
+![Info2](images/info2.png)  
 
 ### Type
 ![Type](images/type.png)
