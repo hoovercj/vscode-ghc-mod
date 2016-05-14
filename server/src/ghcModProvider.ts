@@ -25,20 +25,20 @@ export class GhcModProvider implements IGhcModProvider
     }
 
     // GHC-MOD COMMANDS
-    public doCheck(text: string, uri: string): Promise<Diagnostic[]> {
+    public doCheck(text: string, uri: string, mapFile: boolean): Promise<Diagnostic[]> {
         return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
             command: 'check',
-            text: text,
+            text: mapFile ? text : null,
             uri: this.getRelativePath(uri)
         }).then((lines) => {
             return this.parseCheckDiagnostics(lines);
         });
     }
 
-    public getType(text: string, uri: string, position: Position): Promise<string> {
+    public getType(text: string, uri: string, position: Position, mapFile: boolean): Promise<string> {
         return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
             command: 'type',
-            text: text,
+            text: mapFile ? text : null,
             uri: this.getRelativePath(uri),
             args: [(position.line + 1).toString(), (position.character + 1).toString()]
         }).then((lines) => {
@@ -55,34 +55,15 @@ export class GhcModProvider implements IGhcModProvider
         });
     }
 
-    public getInfo(text: string, uri: string, position: Position): Promise<string> {
-        let word = DocumentUtils.getWordAtPosition(text, position);
-        
-        // Fix for https://github.com/hoovercj/vscode-ghc-mod/issues/11
-        if (word == "->") {
-            word = "(->)";
-        }
-        
-        if(word != "") {
-            return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
-                command: 'info',
-                text: text,
-                uri: this.getRelativePath(uri),
-                args: [word]
-            }).then((lines) => {
-                let tooltip = lines.join('\n').replace(/-- Defined at (.+?):(\d+):(\d+)/g, '');
-                if (tooltip.indexOf('Cannot show info') === -1) {
-                    return tooltip;
-                } else {
-                    return '';
-                }
-            });
-        } else {
-            return new Promise((resolve, reject) => {
-                resolve('');
-            });
-        }
-                
+    public getInfo(text: string, uri: string, position: Position, mapFile: boolean): Promise<string> {
+        return this.getInfoHelper(text, uri, position, mapFile).then((info) => {
+            let tooltip = info.replace(/-- Defined at (.+?):(\d+):(\d+)/g, '');
+            if (tooltip.indexOf('Cannot show info') === -1) {
+                return tooltip;
+            } else {
+                return '';
+            }
+        });
     }
 
     public shutdown(): void {
@@ -90,17 +71,40 @@ export class GhcModProvider implements IGhcModProvider
     }
 
     public getDefinitionLocation(text: string, uri: string, position: Position, root: string): Promise<Location | Location[]> {
-        return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
-            command: 'info',
-            text: null,
-            uri: this.getRelativePath(uri),
-            args: [DocumentUtils.getWordAtPosition(text, position)]
-        }).then((lines) => {
-            return this.parseInfoForDefinition(lines.join('\n'), root);
+        return this.getInfoHelper(text, uri, position, false).then((info) => {
+            return this.parseInfoForDefinition(info, root);
         });
     }
 
     // PRIVATE METHODS
+    private getInfoHelper(text: string, uri: string, position: Position, mapFile: boolean): Promise<string> {
+        let word = DocumentUtils.getWordAtPosition(text, position);
+
+        // Fix for https://github.com/hoovercj/vscode-ghc-mod/issues/11
+        if (word == '->') {
+            word = '(->)';
+        }
+
+        // Comments make ghc-mod freakout
+        if (word == '--' || !word) {
+            word = null;
+        }
+
+        if(word && word.trim()) {
+            return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
+                command: 'info',
+                text: mapFile ? text : null,
+                uri: this.getRelativePath(uri),
+                args: [word]
+            }).then((lines) => {
+                return lines.join('\n');
+            });
+        } else {
+            return Promise.resolve('');
+        }
+
+    }
+
     private parseInfoForDefinition(text: string, root): Location[] {
         let regex = /-- Defined at (.+?):(\d+):(\d+)/g;
         let match;
@@ -119,17 +123,17 @@ export class GhcModProvider implements IGhcModProvider
 
     private filepathToUri(filepath: string): string {
         if (!Path.isAbsolute(filepath)) {
-            filepath = Path.join(this.workspaceRoot, filepath);
+            filepath = Path.join(this.workspaceRoot || '', filepath || '');
         }
         return `file:///${filepath.replace('\\', '/')}`;
     }
 
     private getRelativePath(filepath: string): string {
-        return Path.relative(this.workspaceRoot, filepath);
+        return Path.relative(this.workspaceRoot || '', filepath || '');
     }
 
     private parseTypeInfo(line: string, position: Position): string {
-        // Example line: 4 1 4 17 "a -> a" 
+        // Example line: 4 1 4 17 "a -> a"
         let tokens = line.split('"');
         let type = tokens[1] || '';
         let pos = tokens[0].trim().split(' ').map((i) => {
