@@ -30,8 +30,9 @@ export class InteractiveGhcModProcess implements IGhcMod {
             executable: 'ghc-mod',
             rootPath: ''
         };
+        options = options || defaultOptions;
 
-        // Make sure executable path can be executed. 
+        // Make sure executable path can be executed.
         try {
             cp.execSync(`${options.executable} version`);
         } catch (error) {
@@ -40,7 +41,7 @@ export class InteractiveGhcModProcess implements IGhcMod {
         }
 
         let ret = new InteractiveGhcModProcess();
-        ret.options = options || { executable: defaultOptions.executable, rootPath: defaultOptions.rootPath };
+        ret.options = options;
         ret.logger = logger;
         // Start process, otherwise hover takes a while to work
         ret.spawnProcess();
@@ -123,6 +124,7 @@ export class InteractiveGhcModProcess implements IGhcMod {
 
     private interact(process: cp.ChildProcess, command: string): Promise<string[]> {
         let resultP = this.waitForAnswer(process, command);
+        this.logger.log('Interact: ' + command);
         process.stdin.write(command);
         return resultP;
     }
@@ -158,13 +160,13 @@ export class InteractiveGhcModProcess implements IGhcMod {
     private mapFile(process: cp.ChildProcess, options: GhcModCmdOpts): Promise<string[]> {
         // options.text represents the haskell file relevant to the command
         // In case it has not been saved, map the file to the text first
-        return Promise.resolve([]);
-        // return !options.text ? Promise.resolve([]) : this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
+        // return Promise.resolve([]);
+        return !options.text ? Promise.resolve([]) : this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
     }
 
     private unmapFile(process: cp.ChildProcess, options: GhcModCmdOpts): Promise<string[]> {
-        return Promise.resolve([]);
-        // return !options.text ? Promise.resolve([]) : this.interact(process, `unmap-file ${options.uri}${EOL}`);
+        // return Promise.resolve([]);
+        return !options.text ? Promise.resolve([]) : this.interact(process, `unmap-file ${options.uri}${EOL}`);
     }
 
     private commandAndArgsAsString(options: GhcModCmdOpts): string {

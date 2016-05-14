@@ -54,8 +54,13 @@
                     "description": "Controls the onHover behavior. 'info' will display ghc-mod info, 'type' will display ghc-mod type, 'fallback' will try info and fallback to type,and 'none' will disable onHover tooltips."
                 },
                 "haskell.ghcMod.check": {
-                    "type": "boolean",
-                    "default": true,
+                    "type": "string",
+                    "enum": [
+                        "onSave",
+                        "onChange",
+                        "off"
+                    ],
+                    "default": "onSave",
                     "description": "Controls whether ghc-mod check is enabled or not"
                 },
                 "haskell.ghcMod.logLevel": {

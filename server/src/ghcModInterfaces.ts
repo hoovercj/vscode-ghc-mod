@@ -8,6 +8,12 @@ export enum LogLevel {
     log
 }
 
+export enum CheckTrigger {
+    onSave,
+    onChange,
+    off
+}
+
 export interface ILogger {
     setLogLevel(level: LogLevel): void;
     error(message: string): void;
@@ -29,9 +35,9 @@ export interface IGhcMod {
 }
 
 export interface IGhcModProvider {
-    doCheck(text: string, uri: string): Promise<Diagnostic[]>;
-    getType(text: string, uri: string, position: Position): Promise<string>;
-    getInfo(text: string, uri: string, position: Position): Promise<string>;
+    doCheck(text: string, uri: string, mapFile: boolean): Promise<Diagnostic[]>;
+    getType(text: string, uri: string, position: Position, mapFile: boolean): Promise<string>;
+    getInfo(text: string, uri: string, position: Position, mapFile:boolean): Promise<string>;
     getDefinitionLocation(text: string, uri: string, position: Position, root: string): Promise<Location[]>;
     shutdown(): void;
 }

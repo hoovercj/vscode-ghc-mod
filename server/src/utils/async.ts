@@ -111,7 +111,8 @@ export class Delayer<T> {
 		this.task = null;
 	}
 
-	public trigger(task: ITask<T>, delay: number = this.defaultDelay): Promise<T> {
+	public trigger(task: ITask<T>, delay: number): Promise<T> {
+		delay = delay || this.defaultDelay;
 		this.task = task;
 		this.cancelTimeout();
 
