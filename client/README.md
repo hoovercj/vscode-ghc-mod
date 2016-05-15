@@ -77,7 +77,9 @@ The following options can be set in workspace or user preferences:
 ```
 
 ## Changelog
-__0.2.3__
+__0.2.5__
+- Fixed a ghc-mod crash on longer sets of comment dashes such as `-----------`
+__0.2.4__
 - Setting `"haskell.ghcMod.check": "onChange"` will cause the extension to use `map-file`. This removes the need to save the file but can cause problems in current ghc-mod (5.5.0) and lower, but will hopefully fixed in an upcoming released so I've prepared for it now.
 - fix a ghc-mod crash on `->` and `--`
 

@@ -86,7 +86,7 @@ export class GhcModProvider implements IGhcModProvider
         }
 
         // Comments make ghc-mod freakout
-        if (word == '--' || !word) {
+        if (!word || !word.replace(new RegExp('-', 'g'), '')) {
             word = null;
         }
 

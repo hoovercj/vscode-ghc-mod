@@ -13,7 +13,7 @@
     "homepage": "https://github.com/hoovercj/vscode-gh-mod",
     "icon": "images/icon.png",
     "license": "MIT",
-    "version": "0.2.3",
+    "version": "0.2.5",
     "publisher": "hoovercj",
     "engines": {
         "vscode": "^1.0.0"
@@ -82,7 +82,6 @@
         "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
         "compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install"
-
     },
     "devDependencies": {
         "typescript": "^1.6.2",

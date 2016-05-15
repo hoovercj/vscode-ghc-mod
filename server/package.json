@@ -1,7 +1,7 @@
 {
 	"name": "vscode-ghc-mod-server",
 	"description": "Implementation of a language server for ghc-mod.",
-	"version": "0.1.0",
+	"version": "0.2.5",
 	"author": "Cody Hoover",
     "publisher":"hoovercj",
 	"license": "MIT",
