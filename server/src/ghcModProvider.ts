@@ -86,7 +86,7 @@ export class GhcModProvider implements IGhcModProvider
         }
 
         // Comments make ghc-mod freakout
-        if (!word || !word.replace(new RegExp('-', 'g'), '')) {
+        if (!word || this.isBlacklisted(word)) {
             word = null;
         }
 
@@ -103,6 +103,27 @@ export class GhcModProvider implements IGhcModProvider
             return Promise.resolve('');
         }
 
+    }
+    
+    private isBlacklisted(word: string): boolean {
+        // if a string contains the comment sequence: --
+        if (/.*--.*/g.test(word)) {
+            return true;
+        }
+        
+        // if a string contains the comment sequences: {\- {- -} -\}
+        // if (new RegExp("\{\\?-|-\\?\}", "g").test(word)) {
+        if (new RegExp("{-|-}", "g").test(word)) {
+            return true;
+        }
+
+        if (word.indexOf('-\\}') != -1 || word.indexOf('{\\-') != -1) {
+            return true;
+        }
+
+        // Explore this regex from the haskell textmate bundle
+        // (^[ \t]+)?(?=--+((?![\p{S}\p{P}])|[(),;\[\]`{}_"']))
+        return false;
     }
 
     private parseInfoForDefinition(text: string, root): Location[] {
