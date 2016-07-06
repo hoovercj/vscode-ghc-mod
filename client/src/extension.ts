@@ -8,6 +8,7 @@ import * as path from 'path';
 
 import { ExtensionContext } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient';
+import { Commands } from './commands';
 
 export function activate(context: ExtensionContext) {
 
@@ -34,9 +35,12 @@ export function activate(context: ExtensionContext) {
     };
 
     // Create the language client and start the client.
-    let disposable = new LanguageClient('ghc-mod server', serverOptions, clientOptions).start();
+    let languageClient = new LanguageClient('ghc-mod server', serverOptions, clientOptions);
+    let disposable = languageClient.start();
 
     // Push the disposable to the context's subscriptions so that the
     // client can be deactivated on extension deactivation
     context.subscriptions.push(disposable);
+
+    Commands.register(context, languageClient);
 }

@@ -9,7 +9,8 @@ import {
     createConnection, IConnection,
     TextDocuments, TextDocument,
     Position, InitializeResult, Hover,
-    MarkedString, Files, TextDocumentChangeEvent
+    MarkedString, Files, TextDocumentChangeEvent,
+    RequestType, RequestHandler, TextDocumentPositionParams
 } from 'vscode-languageserver';
 
 let uriToFilePath = Files.uriToFilePath;
@@ -104,6 +105,7 @@ function initialize() {
 
     // Disable current listeners
     connection.onHover(null);
+    connection.onRequest(new InsertTypeMessage(), null);
     documents.onDidChangeContent(null);
     documents.onDidSave(null);
 
@@ -118,6 +120,7 @@ function initialize() {
         initializeDocumentSync();
         initializeOnHover();
         initializeOnDefinition();
+        initializeOnCommand();
     } else {
         connection.onDefinition(null);
     }
@@ -179,6 +182,21 @@ function initializeOnDefinition(): void {
             uriToFilePath(document.uri),
             documentInfo.position,
             workspaceRoot);
+    });
+}
+
+   class InsertTypeMessage implements RequestType<Number,string,void> {
+        constructor() {
+            this.method = "insertType";
+        }
+        method:string;
+    }
+
+function initializeOnCommand(): void {
+    connection.onRequest<TextDocumentPositionParams,string,void>(new InsertTypeMessage(), (documentInfo:TextDocumentPositionParams): any => {
+        let document = documents.get(documentInfo.textDocument.uri);
+        var mapFile = mapFiles && dirtyDocuments.has(document.uri);
+        return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), documentInfo.position, mapFile)
     });
 }
 
