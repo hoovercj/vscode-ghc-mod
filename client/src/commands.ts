@@ -2,31 +2,38 @@
 
 import * as vscode from 'vscode';
 import { LanguageClient, RequestType, LanguageClientOptions, ServerOptions, TransportKind, TextDocumentPositionParams } from 'vscode-languageclient';
+import { Logger } from './utils/logger'
 
-export module Commands {
-    class InsertTypeMessage implements RequestType<TextDocumentPositionParams,string,void> {
-        constructor() {
-            this.method = "insertType";
-        }
-        method:string;
-    }
-    
+namespace InsertTypeRequest {
+    export const type: RequestType<Number,string,void> = { get method() { return 'insertType'; } };
+}
+
+export namespace Commands {
+
     function insertType(client:LanguageClient, editor:vscode.TextEditor) {
-        let sel = editor.selections[0];
-        
-        let info = TextDocumentPositionParams.create(editor.document.uri.toString(), sel.active);
-        client.sendRequest<TextDocumentPositionParams, string, void>(new InsertTypeMessage(), info).then(type => { 
-            // console.log("received type ", type);
-            let iloc = new vscode.Position(sel.active.line, 0);
+        let selection = editor.selections[0];
+        let info = TextDocumentPositionParams.create(editor.document.uri.toString(), selection.active);
+        client.sendRequest<TextDocumentPositionParams, string, void>(InsertTypeRequest.type, info).then(type => { 
+            if (!type) {
+                Logger.log('No type information found. Not inserting type.')
+                return;
+            }
+
+            Logger.log(`received type: ${type}`);
+            let positionToInsert = new vscode.Position(selection.active.line, 0);
             editor.edit(editBuilder => {
-                let line = editor.document.lineAt(iloc.line);
-                editBuilder.insert(iloc, type.replace(/\s+$/,'') + '\n');
+                let definitionLine = editor.document.lineAt(positionToInsert.line);
+                let indent = definitionLine.text.substring(0, definitionLine.firstNonWhitespaceCharacterIndex);
+                let typeLine = `${indent}${type.replace(/\s+$/,'')}\n`
+                editBuilder.insert(positionToInsert, typeLine);
             });
         });
     }
-    
-    export function register(ctx: vscode.ExtensionContext, client:LanguageClient) {
-        let pushReg = (x, y) => ctx.subscriptions.push(vscode.commands.registerTextEditorCommand(x, (ed, e) => y(client, ed)));
-        pushReg('ghcmod.insertType', insertType);
+
+    export function register(context: vscode.ExtensionContext, client: LanguageClient) {
+        let registerCommand = (command, callback) => 
+            context.subscriptions.push(vscode.commands.registerTextEditorCommand(command, (editor, edit) => 
+                callback(client, editor)));
+        registerCommand('ghcmod.insertType', insertType);
     }
 }
