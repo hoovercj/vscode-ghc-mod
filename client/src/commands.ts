@@ -19,12 +19,17 @@ export namespace Commands {
                 return;
             }
 
+            let cleanedType = type
+                .replace(/[ ]+/g,' ') // make multiple spaces unique
+                .replace(/[\r\n]/g,'') // remove all line breaks
+                .replace(/[\r\n\s]+$/,''); // remove trailing whitespaces/line breakes
+
             Logger.log(`received type: ${type}`);
             let positionToInsert = new vscode.Position(selection.active.line, 0);
             editor.edit(editBuilder => {
                 let definitionLine = editor.document.lineAt(positionToInsert.line);
                 let indent = definitionLine.text.substring(0, definitionLine.firstNonWhitespaceCharacterIndex);
-                let typeLine = `${indent}${type.replace(/\s+$/,'')}\n`
+                let typeLine = `${indent}${cleanedType}\n`
                 editBuilder.insert(positionToInsert, typeLine);
             });
         });
