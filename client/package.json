@@ -30,7 +30,7 @@
     "contributes": {
         "commands": [{
             "command": "ghcmod.insertType",
-            "title": "Insert Type"
+            "title": "Haskell: Insert Type"
         }],
         "configuration": {
             "type": "object",
