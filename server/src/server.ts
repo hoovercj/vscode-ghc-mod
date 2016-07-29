@@ -9,10 +9,12 @@ import {
     createConnection, IConnection,
     TextDocuments, TextDocument,
     Position, InitializeResult, Hover,
-    MarkedString, Files, TextDocumentChangeEvent
+    MarkedString, Files, TextDocumentChangeEvent,
+    RequestType, RequestHandler, TextDocumentPositionParams
 } from 'vscode-languageserver';
 
 let uriToFilePath = Files.uriToFilePath;
+import { basename } from 'path';
 
 // Interface between VS Code extension and GHC-Mod api
 import { IGhcMod, IGhcModProvider, LogLevel, ILogger, CheckTrigger } from './ghcModInterfaces';
@@ -104,6 +106,7 @@ function initialize() {
 
     // Disable current listeners
     connection.onHover(null);
+    connection.onRequest(InsertTypeRequest.type, null);
     documents.onDidChangeContent(null);
     documents.onDidSave(null);
 
@@ -118,6 +121,7 @@ function initialize() {
         initializeDocumentSync();
         initializeOnHover();
         initializeOnDefinition();
+        initializeOnCommand();
     } else {
         connection.onDefinition(null);
     }
@@ -179,6 +183,19 @@ function initializeOnDefinition(): void {
             uriToFilePath(document.uri),
             documentInfo.position,
             workspaceRoot);
+    });
+}
+
+
+namespace InsertTypeRequest {
+    export const type: RequestType<Number,string,void> = { get method() { return 'insertType'; } };
+}
+function initializeOnCommand(): void {
+    connection.onRequest<TextDocumentPositionParams,string,void>(InsertTypeRequest.type, (documentInfo:TextDocumentPositionParams): any => {
+        logger.log(`Received InsertType request for ${basename(documentInfo.textDocument.uri)} at ${documentInfo.position.line}:${documentInfo.position.character}`);
+        let document = documents.get(documentInfo.textDocument.uri);
+        var mapFile = mapFiles && dirtyDocuments.has(document.uri);
+        return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), documentInfo.position, mapFile)
     });
 }
 

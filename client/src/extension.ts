@@ -5,11 +5,14 @@
 'use strict';
 
 import * as path from 'path';
-
-import { ExtensionContext } from 'vscode';
+import { ExtensionContext, workspace } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient';
+import { Commands } from './commands';
+import { Logger } from './utils/logger'
 
 export function activate(context: ExtensionContext) {
+    setLogLevel();
+    workspace.onDidChangeConfiguration(setLogLevel); 
 
     // The server is implemented in node
     let serverModule = context.asAbsolutePath(path.join('server', 'src', 'server.js'));
@@ -34,9 +37,17 @@ export function activate(context: ExtensionContext) {
     };
 
     // Create the language client and start the client.
-    let disposable = new LanguageClient('ghc-mod server', serverOptions, clientOptions).start();
+    let languageClient = new LanguageClient('ghc-mod server', serverOptions, clientOptions);
+    let disposable = languageClient.start();
 
     // Push the disposable to the context's subscriptions so that the
     // client can be deactivated on extension deactivation
     context.subscriptions.push(disposable);
+    Commands.register(context, languageClient);
+}
+
+function setLogLevel() {
+    let config = workspace.getConfiguration('haskell.ghcMod');
+    let logLevel = config.get('logLevel', 'error');
+    Logger.setLogLevel(Logger.LogLevel[logLevel]);
 }

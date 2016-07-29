@@ -23,10 +23,15 @@
         "Languages"
     ],
     "activationEvents": [
-        "onLanguage:haskell"
+        "onLanguage:haskell",
+        "onCommand:ghcmod.insertType"
     ],
     "main": "./out/src/extension",
     "contributes": {
+        "commands": [{
+            "command": "ghcmod.insertType",
+            "title": "Haskell: Insert Type"
+        }],
         "configuration": {
             "type": "object",
             "title": "Settings for Haskell projects for ghc-mod",
