@@ -1,0 +1,42 @@
+sudo: required
+dist: trusty
+
+language: node_js
+node_js:
+  - "6"
+
+os:
+  - osx
+  - linux
+
+before_install:
+  - if [ $TRAVIS_OS_NAME == "linux" ]; then
+      export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
+      sh -e /etc/init.d/xvfb start;
+      sleep 3;
+      sudo apt-get --yes install haskell-platform;
+    else
+      curl "https://downloads.haskell.org/~platform/7.10.3/Haskell%20Platform%207.10.3%2064bit.pkg" -o "x.pkg";
+      sudo installer -pkg x.pkg -target / ;
+    fi
+
+
+install:
+  - ghc --version
+  - cabal --version
+  - cabal update
+  - cabal install ghc-mod
+  - if [ $TRAVIS_OS_NAME == "linux" ]; then 
+      export PATH="/home/travis/.cabal/bin:$PATH";
+    else
+      export PATH="/Users/travis/Library/Haskell/bin:$PATH";
+    fi
+  - cd client
+  - npm install
+  - npm run vscode:prepublish
+  - cd ../server
+  - npm install
+  - npm run compile
+
+script:
+  - npm test
