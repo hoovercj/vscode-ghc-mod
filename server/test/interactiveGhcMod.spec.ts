@@ -10,7 +10,7 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import { IGhcMod, GhcModCmdOpts } from '../src/ghcModInterfaces';
-import { TestLogger } from './helpers/TestLogger';
+import { TestLogger } from './helpers/testLogger';
 import { InteractiveGhcModProcess } from '../src/interactiveGhcMod';
 
 // Defines a Mocha test suite to group tests of similar kind together
