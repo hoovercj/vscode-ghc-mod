@@ -1,4 +1,6 @@
 # vscode-ghc-mod
+Linux, OS X: [![Build Status](https://travis-ci.org/hoovercj/vscode-ghc-mod.svg?branch=master)](https://travis-ci.org/hoovercj/vscode-ghc-mod)
+
 ghc-mod language extension for VS Code.
 
 ## Overview
@@ -35,7 +37,6 @@ From the client directory:
 `vsce publish --ImagesUrl https://raw.githubusercontent.com/hoovercj/vscode-ghc-mod/master/client/`
 
 ## Next steps
-- TODO's before public feedback: https://github.com/hoovercj/vscode-ghc-mod/issues/4
 - Add new commands
 - Add completion backend
 
