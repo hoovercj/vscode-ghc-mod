@@ -17,7 +17,7 @@ before_install:
       sudo apt-get --yes install haskell-platform;
     else
       curl "https://downloads.haskell.org/~platform/7.10.3/Haskell%20Platform%207.10.3%2064bit.pkg" -o "x.pkg";
-      sudo installer -pkg x.pkg -target / ;
+      travis_wait sudo installer -pkg x.pkg -target / ;
     fi
 
 
