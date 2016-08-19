@@ -9,8 +9,6 @@ Features:
 
 For linting, please use the [haskell-linter extension][haskell-linter-extension].
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for information on running the extension locally and adding features.
-
 ## Pictures
 ### Check
 Example 1:  

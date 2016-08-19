@@ -12,10 +12,13 @@ To properly run and debug the extension, the `client` and `server` directories s
 The extension assumes `ghc-mod` is installed and on the system PATH OR is configured via `haskell.ghc-mod.executablePath` in user or workspace settings. I installed `ghc-mod` on windows via `cabal` using [these instructions][ghc-mod-instructions] and it is working.
 
 ## Running the extension
-To get the application running, clone the whole repository and run `npm install` in both the `client` and `server` directories. Then open the `client` folder in an instance of VS Code and press `F5` to start debugging. This will launch the extension in a new instance of VS Code called the extension host.
+To get the application running, clone the whole repository and run `npm install` and `npm run compile` in both the `client` and `server` directories. Then open the `client` folder in an instance of VS Code and press `F5` to start debugging. This will launch the extension in a new instance of VS Code called the extension host.
 
 ## Debugging the extension
 After running the extension as explained above, press `F5` in a seperate instance of VS Code that has the `server` directory open. This will attach the debugger to the extension host.
+
+## Modifying the extension
+Run `npm run compile` from the client and server directories depending on which files changed, or use the build tasks (from command palette or ctrl+shift+b) to start the build tasks in "watch" mode which will build changes as files change.
 
 ## Testing the extension
 ### Mocha test runner via npm
