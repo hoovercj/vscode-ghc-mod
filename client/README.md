@@ -1,11 +1,15 @@
 # vscode-ghc-mod
 This exension exposes ghc-mod functionality to VS Code. It requires having ghc-mod installed. I installed v5.5.0 compiled by GHC 7.10.3 on Windows via `cabal` using [these instructions][ghc-mod-instructions] and it is working. Hasn't been tested on Linux or OSX.
 
+Symbol support requires having fast-tags installed. For this reason, symbols are disabled by default. Change the configuration to enable it.
+
 Features:
 - `check`: Works best when configured to run "onSave" with autosave turned on. "onChange" is experimental and may cause problems with type, info, and "Peek/Go to definition" until a newer version of ghc-mod has improved support for map-file.
 - `type` and `info`: Displayed when hovering the mouse over a symbol. See below for configuration.
-- `Go to definition`: ctrl+click, press f12, or right-click -> "Peek/Go to definition"
+- `Go to definition`: Use `ctrl+click`, `f12`, or right-click -> "Peek/Go to definition".
 - `Insert type`: There is now a command to insert a type definition for a function on the line above. The cursor must be in the name of function so ghc-mod can find the type information for that symbol.
+- `Go to symbol`: Use `ctrl+shift+O` or type `@` in the command palette to see symbols in document.
+- `Show all symbols`: Use `ctrl+T` or type `#` in the command palette followed by a search string to search for symbols across the entire workspace.
 
 For linting, please use the [haskell-linter extension][haskell-linter-extension].
 
@@ -74,27 +78,44 @@ The following options can be set in workspace or user preferences:
     ],
     "default": "error",
     "description": "Controls the verbosity of logging. Logs can be seen in the console by opening the dev tools."
+},
+"haskell.symbols.provider": {
+    "type": "string",
+    "enum": [
+        "none",
+        "fast-tags"
+    ],
+    "default": "none",
+    "description": "Selects a symbol provider."
+},
+"haskell.symbols.executablePath": {
+    "type": "string",
+    "default": "fast-tags",
+    "description": "Full path to The symbol provider. Extension may behave unexpectedly if the symbol provider setting is for a different command than the path provided."
 }
 ```
 
 ## Changelog
+__0.4.0__
+- Added "Go to symbol"/"Show all symbols" support. Thanks to @archaeron for the feature.
+
 __0.3.0__
 - Added "insert type" command. Thanks to @theor for the pull request.
 
 __0.2.5__
-- Fixed a ghc-mod crash on longer sets of comment dashes such as `-----------`
+- Fixed a ghc-mod crash on longer sets of comment dashes such as `-----------`.
 
 __0.2.4__
 - Setting `"haskell.ghcMod.check": "onChange"` will cause the extension to use `map-file`. This removes the need to save the file but can cause problems in current ghc-mod (5.5.0) and lower, but will hopefully fixed in an upcoming released so I've prepared for it now.
-- fix a ghc-mod crash on `->` and `--`
+- Fixed a ghc-mod crash on `->` and `--`.
 
 __0.2.2__
-- fix a ghc-mod crash bug on mac when word is empty string (thanks @slepher)
+- Fixed a ghc-mod crash bug on mac when word is empty string (thanks @slepher).
 
 __0.2.0__
-- __Breaking:__ Files must be saved (auto-save is your friend)
-- Type and Info tooltips are now more colorful (treated as code)
-- Go To Definition works
+- __Breaking:__ Files must be saved (auto-save is your friend).
+- Type and Info tooltips are now more colorful (treated as code).
+- Go To Definition works.
 
 [ghc-mod-instructions]: http://www.mew.org/~kazu/proj/ghc-mod/en/install.html
 [haskell-linter-extension]: https://marketplace.visualstudio.com/items/hoovercj.haskell-linter

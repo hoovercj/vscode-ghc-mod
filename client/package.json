@@ -79,6 +79,20 @@
                     ],
                     "default": "error",
                     "description": "Controls the verbosity of logging. Logs can be seen in the console by opening the dev tools."
+                },
+                "haskell.symbols.provider": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "fast-tags"
+                    ],
+                    "default": "none",
+                    "description": "Selects a symbol provider."
+                },
+                "haskell.symbols.executablePath": {
+                    "type": "string",
+                    "default": "fast-tags",
+                    "description": "Full path to The symbol provider. Extension may behave unexpectedly if the symbol provider setting is for a different command than the path provided."
                 }
             }
         }

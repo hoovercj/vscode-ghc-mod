@@ -1,6 +1,14 @@
+/* --------------------------------------------------------------------------------------------
+ * Copyright (c) Cody Hoover. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ * ------------------------------------------------------------------------------------------ */
 import { LogLevel, ILogger } from '../../src/ghcModInterfaces';
 
 export class TestLogger implements ILogger {
+
+    public setLogger(): void {
+        // do nothing
+    }
 
     public setLogLevel(level: LogLevel): void {
         // do nothing

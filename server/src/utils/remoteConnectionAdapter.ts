@@ -1,3 +1,7 @@
+/* --------------------------------------------------------------------------------------------
+ * Copyright (c) Cody Hoover. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ * ------------------------------------------------------------------------------------------ */
 import { IConnection, RemoteConsole, RemoteWindow } from 'vscode-languageserver';
 import { LogLevel, ILogger } from '../ghcModInterfaces';
 
@@ -6,10 +10,26 @@ export class RemoteConnectionAdapter implements ILogger {
     private window: RemoteWindow;
     private level: LogLevel;
 
+    // private static instance: RemoteConnectionAdapter = new RemoteConnectionAdapter();
+
     public constructor(connection: IConnection, level?: LogLevel) {
         this.level = level || LogLevel.error;
         this.logger = connection.console;
         this.window = connection.window;
+    }
+    // constructor() {
+    //     if(RemoteConnectionAdapter.instance){
+    //         throw new Error("Error: Instantiation failed: Use RemoteConnectionAdapter.getInstance() instead of new.");
+    //     }
+    //     RemoteConnectionAdapter.instance = this;
+    // }
+
+    // public static getInstance(): RemoteConnectionAdapter {
+    //     return RemoteConnectionAdapter.instance;
+    // }
+
+    public setLogger(logger: IConnection) {
+        this.logger = logger.console;
     }
 
     public setLogLevel(level: LogLevel): void {

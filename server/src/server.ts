@@ -17,7 +17,7 @@ let uriToFilePath = Files.uriToFilePath;
 import { basename } from 'path';
 
 // Interface between VS Code extension and GHC-Mod api
-import { IGhcMod, IGhcModProvider, LogLevel, ILogger, CheckTrigger } from './ghcModInterfaces';
+import { IGhcMod, IGhcModProvider, LogLevel, ILogger, CheckTrigger, ISymbolProvider } from './ghcModInterfaces';
 import { InteractiveGhcModProcess, InteractiveGhcModProcessOptions } from './interactiveGhcMod';
 import { GhcModProvider } from './ghcModProvider';
 let ghcMod: IGhcMod;
@@ -31,6 +31,8 @@ let hoverDelayer: ThrottledDelayer<Hover> = new ThrottledDelayer<Hover>(100);
 
 import { RemoteConnectionAdapter } from './utils/remoteConnectionAdapter';
 let logger: ILogger;
+
+import { FastTagsSymbolProvider } from './fastTagsSymbolProvider';
 
 // Create a connection for the server. The connection uses
 // stdin / stdout for message passing
@@ -48,6 +50,7 @@ documents.listen(connection);
 let workspaceRoot: string;
 connection.onInitialize((params): InitializeResult => {
     logger = new RemoteConnectionAdapter(connection);
+
     workspaceRoot = params.rootPath;
 
     // NOTE: onConfigurationChange gets called after onInitialize
@@ -60,21 +63,29 @@ connection.onInitialize((params): InitializeResult => {
             // Tell the client that the server works in FULL text document sync mode
             hoverProvider: true,
             textDocumentSync: documents.syncKind,
-            definitionProvider: true
+            definitionProvider: true,
+            documentSymbolProvider: true,
+            workspaceSymbolProvider: true
         }
     };
 });
 
 // These are the settings we defined in the client's package.json file
 interface ExtensionSettings {
-    maxNumberOfProblems: number;
-    executablePath: string;
-    onHover: string;
-    check: string;
-    logLevel: string;
+    ghcMod: {
+        maxNumberOfProblems: number;
+        executablePath: string;
+        onHover: string;
+        check: string;
+        logLevel: string;
+    }
+    symbols: {
+        executablePath: string;
+        provider: string;
+    }
 }
 
-let settings: ExtensionSettings = Object.create({});
+let haskellConfig: ExtensionSettings = Object.create({ghcMod: {}, symbols: {}});
 
 let mapFiles: boolean = false;
 
@@ -82,22 +93,24 @@ let mapFiles: boolean = false;
 // It includes ALL settings. If the user has not set them, the
 // default value will be sent.
 connection.onDidChangeConfiguration((change) => {
-    logger.log('haskell.ghcMod configuration changed');
-    let oldSettings = settings;
-    settings = change.settings.haskell.ghcMod;
-    mapFiles = CheckTrigger[settings.check] == CheckTrigger.onChange;
-    logger.setLogLevel(LogLevel[settings.logLevel]);
+    logger.log('haskell configuration changed');
+    let oldSettings = haskellConfig;
+    haskellConfig = change.settings.haskell;
+    logger.setLogLevel(LogLevel[haskellConfig.ghcMod.logLevel]);
+    mapFiles = CheckTrigger[haskellConfig.ghcMod.check] == CheckTrigger.onChange;
 
-    if (oldSettings.executablePath !== settings.executablePath) {
-        initialize();
-    } else if (oldSettings.check !== settings.check ||
-               oldSettings.maxNumberOfProblems !== settings.maxNumberOfProblems) {
+    if (oldSettings.ghcMod.executablePath !== haskellConfig.ghcMod.executablePath) {
+        initializeGhcMod();
+    } else if (oldSettings.ghcMod.check !== haskellConfig.ghcMod.check ||
+               oldSettings.ghcMod.maxNumberOfProblems !== haskellConfig.ghcMod.maxNumberOfProblems) {
         // Revalidate any open text documents
         documents.all().forEach(ghcCheck);
     }
+
+    initializeSymbolProvider();
 });
 
-function initialize() {
+function initializeGhcMod() {
     // Shutdown existing provider if it exists
     if (ghcModProvider) {
         ghcModProvider.shutdown();
@@ -127,6 +140,27 @@ function initialize() {
     }
 }
 
+function initializeSymbolProvider(): void {
+    let symbolProvider = null;
+
+    switch(haskellConfig.symbols.provider) {
+        case "fast-tags":
+            symbolProvider = new FastTagsSymbolProvider(haskellConfig.symbols.executablePath, workspaceRoot, logger)
+            break;
+        default:
+            break;
+    }
+
+    if (symbolProvider) {
+        connection.onDocumentSymbol((uri) => symbolProvider.getSymbolsForFile(uri));
+        connection.onWorkspaceSymbol((query, cancellationToken) => symbolProvider.getSymbolsForWorkspace(query, cancellationToken));
+    } else {
+        connection.onDocumentSymbol(null);
+        connection.onWorkspaceSymbol(null);
+    }
+
+}
+
 function initializeDocumentSync(): void {
     // The content of a text document has changed. This event is emitted
     // when the text document first opened or when its content has changed.
@@ -136,14 +170,14 @@ function initializeDocumentSync(): void {
     // NOT serve as a queue.
     documents.onDidSave((change) => {
         dirtyDocuments.delete(change.document.uri);
-        if(CheckTrigger[settings.check] == CheckTrigger.onSave || settings.check == "true") {
+        if(CheckTrigger[haskellConfig.ghcMod.check] == CheckTrigger.onSave || haskellConfig.ghcMod.check == "true") {
             handleChangeEvent(change);
         }
     });
 
     documents.onDidChangeContent((change) => {
         dirtyDocuments.add(change.document.uri);
-        if(CheckTrigger[settings.check] == CheckTrigger.onChange) {
+        if(CheckTrigger[haskellConfig.ghcMod.check] == CheckTrigger.onChange) {
             handleChangeEvent(change);
         }
     });
@@ -186,7 +220,6 @@ function initializeOnDefinition(): void {
     });
 }
 
-
 namespace InsertTypeRequest {
     export const type: RequestType<Number,string,void> = { get method() { return 'insertType'; } };
 }
@@ -207,7 +240,7 @@ connection.onShutdown(() => {
 
 function createGhcMod(): IGhcMod {
     let options: InteractiveGhcModProcessOptions = {
-        executable: settings.executablePath,
+        executable: haskellConfig.ghcMod.executablePath,
         rootPath: workspaceRoot
     };
     return InteractiveGhcModProcess.create(options, logger);
@@ -215,21 +248,21 @@ function createGhcMod(): IGhcMod {
 
 function getInfoOrTypeHover(document: TextDocument, position: Position): Promise<Hover> {
     // return immediately if setting is 'none'
-    if (settings.onHover === 'none' || !ghcMod || !ghcModProvider) {
+    if (haskellConfig.ghcMod.onHover === 'none' || !ghcMod || !ghcModProvider) {
         return null;
     }
 
     var mapFile = mapFiles && dirtyDocuments.has(document.uri);
 
     return Promise.resolve().then(() => {
-        if (settings.onHover === 'info' || settings.onHover === 'fallback') {
+        if (haskellConfig.ghcMod.onHover === 'info' || haskellConfig.ghcMod.onHover === 'fallback') {
             return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), position, mapFile);
         } else {
             return null;
         }
     }, (reason) => { logger.warn('ghcModProvider.getInfo rejected: ' + reason); })
     .then((info) => {
-       if (settings.onHover === 'info' || info) {
+       if (haskellConfig.ghcMod.onHover === 'info' || info) {
            return info;
        } else {
            return ghcModProvider.getType(document.getText(), uriToFilePath(document.uri), position, mapFile);
@@ -245,11 +278,11 @@ function getInfoOrTypeHover(document: TextDocument, position: Position): Promise
 function ghcCheck(document: TextDocument): Promise<void> {
     var mapFile = mapFiles && dirtyDocuments.has(document.uri);
     return Promise.resolve().then(() => {
-        if (!ghcMod || !ghcModProvider || CheckTrigger[settings.check] == CheckTrigger.off) {
+        if (!ghcMod || !ghcModProvider || CheckTrigger[haskellConfig.ghcMod.check] == CheckTrigger.off) {
             connection.sendDiagnostics({uri: document.uri, diagnostics: []});
         } else {
             ghcModProvider.doCheck(document.getText(), uriToFilePath(document.uri), mapFile).then((diagnostics) => {
-                connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics.slice(0, settings.maxNumberOfProblems) });
+                connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics.slice(0, haskellConfig.ghcMod.maxNumberOfProblems) });
             });
         }
     });
