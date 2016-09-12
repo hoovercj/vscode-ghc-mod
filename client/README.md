@@ -32,6 +32,13 @@ Example 2:
 ### Go To Definition
 ![Definition](images/definition.png)
 
+### Go To Symbol
+![Definition](images/symbols1.png)
+
+### Show All Symbols
+![Definition](images/symbols2.png)
+
+
 ## Configuration:
 The following options can be set in workspace or user preferences:
 ```json

@@ -40,6 +40,7 @@ export class FastTagsSymbolProvider implements ISymbolProvider {
 
     private getSymbols(command: string): Thenable<SymbolInformation[]> {
         return new Promise((resolve, reject) => {
+            this.logger.log(command);
             cp.exec(command, (error, stdout, stderr) => {
                 let errorMessage = '';
                 if(error) {
@@ -51,9 +52,10 @@ export class FastTagsSymbolProvider implements ISymbolProvider {
                 }
 
                 if (errorMessage) {
-                    this.logger.warn(errorMessage);
+                    this.logger.error(errorMessage);
                     resolve([]);
                 }
+                this.logger.log(stdout.toString('UTF8'));
                 resolve(this.parseTags(stdout.toString('UTF8')));
             });
         });
@@ -63,7 +65,7 @@ export class FastTagsSymbolProvider implements ISymbolProvider {
         let symbolInformation = rawTags
             .split('\n')
             .slice(1)
-            .map((tagLine) => { return tagLine.split('\t') })
+            .map((tagLine) => { return tagLine.split('\t'); })
             .filter((line) => line.length === 4)
             .map(([name, path, line, kind]) => {
                 let uri = Files.filepathToUri(path, this.workspaceRoot);
@@ -79,6 +81,7 @@ export class FastTagsSymbolProvider implements ISymbolProvider {
                     location: Location.create(uri, range)
                 };
             });
+        this.logger.log(`Found ${symbolInformation.length} tags`);
         return symbolInformation;
     }
 
