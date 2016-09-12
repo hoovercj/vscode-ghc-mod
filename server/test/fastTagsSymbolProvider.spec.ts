@@ -4,6 +4,7 @@ import { FastTagsSymbolProvider } from '../src/fastTagsSymbolProvider';
 import { DocumentSymbolParams, SymbolInformation, SymbolKind, 
          Location, Range, Position } from 'vscode-languageserver'
 import { Files } from '../src/utils/files';
+import * as path from 'path';
 import { TestLogger } from './helpers/testLogger';
 
 describe('FastTagsSymbolProvider', () => {
@@ -13,10 +14,10 @@ describe('FastTagsSymbolProvider', () => {
     let fastTagsCommand = 'fast-tags';
 
     let cwd = process.cwd();
-    let symbolsDir: string = `${cwd}/test/fixtures/symbols/`;
-    let symbolsEmptyDir: string = `${cwd}\\test\\fixtures\\symbols\\empty\\`;
-    let symbolsZeroPath: string = `${cwd}\\test\\fixtures\\symbols\\symbols0.hs`;
-    let symbolsOnePath: string = `${cwd}\\test\\fixtures\\symbols\\symbols1.hs`;
+    let symbolsDir: string = path.join(cwd, '/test/fixtures/symbols/');
+    let symbolsEmptyDir: string = path.join(cwd, '/test/fixtures/symbols/empty/');
+    let symbolsZeroPath: string = path.join(cwd, '/test/fixtures/symbols/symbols0.hs');
+    let symbolsOnePath: string = path.join(cwd, '/test/fixtures/symbols/symbols1.hs');
 
     let position0 = Position.create(0,0);
     let range0 = Range.create(position0, position0);
@@ -54,7 +55,7 @@ describe('FastTagsSymbolProvider', () => {
 
         it ('should return an empty array when the file is empty', () => {
             let symbolProvider = new FastTagsSymbolProvider(fastTagsCommand, cwd, logger);
-            let path: string = './test/fixtures/empty.hs'
+            let path: string = './test/fixtures/empty.hs';
             let documentSymbolParams = <DocumentSymbolParams>{ textDocument: { uri: Files.filepathToUri(path, cwd) } };
             return symbolProvider.getSymbolsForFile(documentSymbolParams).then((symbols) => {
                 assert.equal(symbols.length, 0);
