@@ -25,7 +25,7 @@ export class FastTagsSymbolProvider implements ISymbolProvider {
 
     public getSymbolsForFile(documentSymbolParams : DocumentSymbolParams): Thenable<SymbolInformation[]> {
         let uri = documentSymbolParams.textDocument.uri;
-        let command = `${this.executable} -o - .${VscodeFiles.uriToFilePath(uri)}`;
+        let command = `${this.executable} -o - ${VscodeFiles.uriToFilePath(uri)}`;
         return this.getSymbols(command);
     }
 
