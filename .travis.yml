@@ -26,6 +26,7 @@ install:
   - cabal --version
   - cabal update
   - cabal install ghc-mod
+  - cabal install fast-tags
   - if [ $TRAVIS_OS_NAME == "linux" ]; then 
       export PATH="/home/travis/.cabal/bin:$PATH";
     else
