@@ -7,61 +7,26 @@ import {
     SymbolKind, SymbolInformation, DocumentSymbolParams,
     Range, Position, Location, Files as VscodeFiles
 } from 'vscode-languageserver';
-import { ISymbolProvider, ILogger } from '../Interfaces';
-
+import { ILogger } from '../Interfaces';
+import { AbstractTagsSymbolProvider } from './abstractTagsSymbolProvider';
 import { Files } from '../utils/files';
 
-export class FastTagsSymbolProvider implements ISymbolProvider {
-
-    private executable: string;
-    private workspaceRoot: string;
-    private logger: ILogger
+export class FastTagsSymbolProvider extends AbstractTagsSymbolProvider {
 
     public constructor(executable: string, workspaceRoot: string, logger: ILogger) {
-        this.executable = executable || 'fast-tags';
-        this.workspaceRoot = workspaceRoot;
-        this.logger = logger;
+        super(executable || 'fast-tags', workspaceRoot, logger);
     }
 
-    public getSymbolsForFile(documentSymbolParams : DocumentSymbolParams): Thenable<SymbolInformation[]> {
+    protected getFileSymbolsCommand(documentSymbolParams : DocumentSymbolParams): string {
         let uri = documentSymbolParams.textDocument.uri;
-        let command = `${this.executable} -o - ${VscodeFiles.uriToFilePath(uri)}`;
-        return this.getSymbols(command);
+        return `${this.executable} -o - ${VscodeFiles.uriToFilePath(uri)}`;
     }
 
-    public getSymbolsForWorkspace(options, cancellationToken?): Thenable<SymbolInformation[]> {
-        let command = `${this.executable} -R ${this.workspaceRoot} -o - `;
-        return this.getSymbols(command).then(symbols => {
-            return symbols.filter(documentSymbol => {
-                return documentSymbol.name.toLowerCase().indexOf(options.query.toLowerCase()) >= 0
-            })
-        });
+    protected getWorkspaceSymbolsCommand(): string {
+        return `${this.executable} -R ${this.workspaceRoot} -o - `;
     }
 
-    private getSymbols(command: string): Thenable<SymbolInformation[]> {
-        return new Promise((resolve, reject) => {
-            this.logger.log(command);
-            cp.exec(command, (error, stdout, stderr) => {
-                let errorMessage = '';
-                if(error) {
-                    errorMessage += JSON.stringify(error);
-                    errorMessage += '\n';
-                }
-                if (stderr) {
-                    errorMessage += stderr.toString();
-                }
-
-                if (errorMessage) {
-                    this.logger.error(errorMessage);
-                    resolve([]);
-                }
-                this.logger.log(stdout.toString('UTF8'));
-                resolve(this.parseTags(stdout.toString('UTF8')));
-            });
-        });
-    }
-
-    private parseTags(rawTags : String) : SymbolInformation[] {
+    protected parseTags(rawTags : String) : SymbolInformation[] {
         let symbolInformation = rawTags
             .split('\n')
             .slice(1)
