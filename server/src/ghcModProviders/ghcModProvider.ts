@@ -4,9 +4,9 @@
  * ------------------------------------------------------------------------------------------ */
 'use strict';
 
-import { ILogger, IGhcModProvider, IGhcMod, GhcModCmdOpts } from './ghcModInterfaces';
-import { DocumentUtils } from './utils/document';
-import { Files } from './utils/files';
+import { ILogger, IGhcModProvider, IGhcMod, GhcModCmdOpts } from '../interfaces';
+import { DocumentUtils } from '../utils/document';
+import { Files } from '../utils/files';
 import {
     Diagnostic, DiagnosticSeverity, Range, Position, Location
 } from 'vscode-languageserver';

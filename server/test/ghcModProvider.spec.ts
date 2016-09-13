@@ -1,8 +1,8 @@
 import * as assert from 'assert';
 import { TestLogger } from './helpers/testLogger';
 import { TestGhcMod } from './helpers/testGhcMod';
-import { IGhcMod, IGhcModProvider, ILogger } from '../src/ghcModInterfaces';
-import { GhcModProvider } from '../src/ghcModProvider';
+import { IGhcMod, IGhcModProvider, ILogger } from '../src/interfaces';
+import { GhcModProvider } from '../src/ghcModProviders/ghcModProvider';
 
 import { DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
 

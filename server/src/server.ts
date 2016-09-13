@@ -17,9 +17,9 @@ let uriToFilePath = Files.uriToFilePath;
 import { basename } from 'path';
 
 // Interface between VS Code extension and GHC-Mod api
-import { IGhcMod, IGhcModProvider, LogLevel, ILogger, CheckTrigger, ISymbolProvider } from './ghcModInterfaces';
-import { InteractiveGhcModProcess, InteractiveGhcModProcessOptions } from './interactiveGhcMod';
-import { GhcModProvider } from './ghcModProvider';
+import { IGhcMod, IGhcModProvider, LogLevel, ILogger, CheckTrigger, ISymbolProvider } from './interfaces';
+import { InteractiveGhcModProcess, InteractiveGhcModProcessOptions } from './ghcModProviders/interactiveGhcMod';
+import { GhcModProvider } from './ghcModProviders/ghcModProvider';
 let ghcMod: IGhcMod;
 let ghcModProvider: IGhcModProvider;
 
@@ -32,7 +32,8 @@ let hoverDelayer: ThrottledDelayer<Hover> = new ThrottledDelayer<Hover>(100);
 import { RemoteConnectionAdapter } from './utils/remoteConnectionAdapter';
 let logger: ILogger;
 
-import { FastTagsSymbolProvider } from './fastTagsSymbolProvider';
+import { FastTagsSymbolProvider } from './symbolProviders/fastTagsSymbolProvider';
+import { HaskTagsSymbolProvider } from './symbolProviders/hasktagsSymbolprovider'
 
 // Create a connection for the server. The connection uses
 // stdin / stdout for message passing
@@ -145,7 +146,10 @@ function initializeSymbolProvider(): void {
 
     switch(haskellConfig.symbols.provider) {
         case "fast-tags":
-            symbolProvider = new FastTagsSymbolProvider(haskellConfig.symbols.executablePath, workspaceRoot, logger)
+            symbolProvider = new FastTagsSymbolProvider(haskellConfig.symbols.executablePath, workspaceRoot, logger);
+            break;
+        case "hasktags":
+            symbolProvider = new HaskTagsSymbolProvider(haskellConfig.symbols.executablePath, workspaceRoot, logger);
             break;
         default:
             break;

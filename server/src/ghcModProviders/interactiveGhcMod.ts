@@ -2,10 +2,10 @@
  * Copyright (c) Cody Hoover. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { ILogger, IGhcMod, GhcModCmdOpts } from './ghcModInterfaces';
+import { ILogger, IGhcMod, GhcModCmdOpts } from '../interfaces';
 import * as cp from 'child_process';
 import {EOL} from 'os';
-import { ThrottledDelayer } from './utils/async';
+import { ThrottledDelayer } from '../utils/async';
 
 let promiseQueue = require('promise-queue');
 

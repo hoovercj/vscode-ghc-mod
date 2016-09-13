@@ -1,17 +1,17 @@
 import * as assert from 'assert';
 import { ISymbolProvider, ILogger } from '../src/interfaces';
-import { FastTagsSymbolProvider } from '../src/symbolProviders/fastTagsSymbolProvider';
+import { HaskTagsSymbolProvider } from '../src/symbolProviders/haskTagsSymbolProvider';
 import { DocumentSymbolParams, SymbolInformation, SymbolKind, 
          Location, Range, Position } from 'vscode-languageserver'
 import { Files } from '../src/utils/files';
 import * as path from 'path';
 import { TestLogger } from './helpers/testLogger';
 
-describe('FastTagsSymbolProvider', () => {
+describe('HaskTagsSymbolProvider', () => {
 
     let logger: ILogger = new TestLogger();
 
-    let fastTagsCommand = 'fast-tags';
+    let haskTagsCommand = 'hasktags';
 
     let cwd = process.cwd();
     let symbolsDir: string = path.join(cwd, '/test/fixtures/symbols/');
@@ -34,7 +34,7 @@ describe('FastTagsSymbolProvider', () => {
 
     describe ('#getSymbolsForFile', () => {
         it ('should return the correct symbols from a file', () => {
-            let symbolProvider = new FastTagsSymbolProvider(fastTagsCommand, cwd, logger);
+            let symbolProvider = new HaskTagsSymbolProvider(haskTagsCommand, cwd, logger);
             let documentSymbolParams = <DocumentSymbolParams>{ textDocument: { uri: Files.filepathToUri(symbolsZeroPath, cwd) } };
             return symbolProvider.getSymbolsForFile(documentSymbolParams).then((symbols) => {
                 let expectedSymbols = <SymbolInformation[]> [
@@ -54,7 +54,7 @@ describe('FastTagsSymbolProvider', () => {
         });
 
         it ('should return an empty array when the file is empty', () => {
-            let symbolProvider = new FastTagsSymbolProvider(fastTagsCommand, cwd, logger);
+            let symbolProvider = new HaskTagsSymbolProvider(haskTagsCommand, cwd, logger);
             let path: string = './test/fixtures/empty.hs';
             let documentSymbolParams = <DocumentSymbolParams>{ textDocument: { uri: Files.filepathToUri(path, cwd) } };
             return symbolProvider.getSymbolsForFile(documentSymbolParams).then((symbols) => {
@@ -65,7 +65,7 @@ describe('FastTagsSymbolProvider', () => {
 
     describe('#getSymbolsForFile', () => {
         it ('should return the symbols matching the query', () => {
-            let symbolProvider = new FastTagsSymbolProvider(fastTagsCommand, cwd, logger);
+            let symbolProvider = new HaskTagsSymbolProvider(haskTagsCommand, cwd, logger);
             return symbolProvider.getSymbolsForWorkspace({query: 'B'}).then((symbols) => {
                 let expectedSymbols = <SymbolInformation[]> [
                     {
@@ -84,7 +84,7 @@ describe('FastTagsSymbolProvider', () => {
         });
 
         it ('should return an empty array when the directory is empty', () => {
-            let symbolProvider = new FastTagsSymbolProvider(fastTagsCommand, './test/fixtures/symbols/empty/', logger);
+            let symbolProvider = new HaskTagsSymbolProvider(haskTagsCommand, './test/fixtures/symbols/empty/', logger);
             return symbolProvider.getSymbolsForWorkspace({query: 'b'}).then((symbols) => {
                 assert.equal(symbols.length, 0);
             });

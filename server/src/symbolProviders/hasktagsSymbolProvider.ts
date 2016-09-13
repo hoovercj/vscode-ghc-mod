@@ -7,30 +7,30 @@ import {
     SymbolKind, SymbolInformation, DocumentSymbolParams,
     Range, Position, Location, Files as VscodeFiles
 } from 'vscode-languageserver';
-import { ISymbolProvider, ILogger } from './ghcModInterfaces';
+import { ILogger, ISymbolProvider } from '../interfaces';
 
-import { Files } from './utils/files';
+import { Files } from '../utils/files';
 
-export class FastTagsSymbolProvider implements ISymbolProvider {
+export class HaskTagsSymbolProvider implements ISymbolProvider {
 
     private executable: string;
     private workspaceRoot: string;
     private logger: ILogger
 
     public constructor(executable: string, workspaceRoot: string, logger: ILogger) {
-        this.executable = executable;
+        this.executable = executable || 'hasktags';
         this.workspaceRoot = workspaceRoot;
         this.logger = logger;
     }
 
     public getSymbolsForFile(documentSymbolParams : DocumentSymbolParams): Thenable<SymbolInformation[]> {
         let uri = documentSymbolParams.textDocument.uri;
-        let command = `${this.executable} -o - ${VscodeFiles.uriToFilePath(uri)}`;
+        let command = `${this.executable} -c -x -o - ${VscodeFiles.uriToFilePath(uri)}`;
         return this.getSymbols(command);
     }
 
     public getSymbolsForWorkspace(options, cancellationToken?): Thenable<SymbolInformation[]> {
-        let command = `${this.executable} -R ${this.workspaceRoot} -o - `;
+        let command = `${this.executable} -c -x -o - ${this.workspaceRoot}`;
         return this.getSymbols(command).then(symbols => {
             return symbols.filter(documentSymbol => {
                 return documentSymbol.name.toLowerCase().indexOf(options.query.toLowerCase()) >= 0
@@ -64,23 +64,26 @@ export class FastTagsSymbolProvider implements ISymbolProvider {
     private parseTags(rawTags : String) : SymbolInformation[] {
         let symbolInformation = rawTags
             .split('\n')
-            .slice(1)
+            .slice(3)
             .map((tagLine) => { return tagLine.split('\t'); })
-            .filter((line) => line.length === 4)
-            .map(([name, path, line, kind]) => {
-                let uri = Files.filepathToUri(path, this.workspaceRoot);
-                let lineNumber = parseInt(line, 10) - 1;
+            .filter((line) => line.length === 6)
+            .map(([name, path, , kind, line, ]) => {
+                let uri = Files.filepathToUri(path, '');
+                let lineNumber = parseInt(line.replace('line:', ''), 10) - 1;
                 let range = Range.create(
                     Position.create(lineNumber, 0),
                     Position.create(lineNumber, 0)
                 );
-                let symbolKind = FastTagsSymbolProvider.toSymbolKind(kind);
+                let symbolKind = HaskTagsSymbolProvider.toSymbolKind(kind);
                 return <SymbolInformation> {
                     name : name,
                     kind : symbolKind,
                     location: Location.create(uri, range)
                 };
-            });
+            })
+            .filter(HaskTagsSymbolProvider.onlyUnique)
+            .filter(HaskTagsSymbolProvider.noBackToBack);
+
         this.logger.log(`Found ${symbolInformation.length} tags`);
         return symbolInformation;
     }
@@ -89,18 +92,29 @@ export class FastTagsSymbolProvider implements ISymbolProvider {
         switch(rawKind.trim()) {
             case 'm':
                 return SymbolKind.Module
-            case 'f':
+            case 'ft':
                 return SymbolKind.Function
             case 'c':
                 return SymbolKind.Class
-            case 't':
-                return SymbolKind.Interface
-            case 'C':
+            case 'cons':
                 return SymbolKind.Constructor
+            case 't':
+            case 'nt':
+                return SymbolKind.Interface
             case 'o':
                 return SymbolKind.Method
             default:
                 return SymbolKind.Function
         }
+    }
+
+    private static onlyUnique(value, index, self): boolean { 
+        return self.indexOf(value) === index;
+    }
+
+    private static noBackToBack(value: SymbolInformation, index, self: SymbolInformation[]): boolean {
+        return index === 0 ? true :
+            !(value.name === self[index - 1].name &&
+              value.location.range.start.line - self[index - 1].location.range.start.line <= 1)
     }
 }

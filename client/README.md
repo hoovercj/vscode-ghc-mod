@@ -1,7 +1,7 @@
 # vscode-ghc-mod
 This exension exposes ghc-mod functionality to VS Code. It requires having ghc-mod installed. I installed v5.5.0 compiled by GHC 7.10.3 on Windows via `cabal` using [these instructions][ghc-mod-instructions] and it is working. Hasn't been tested on Linux or OSX.
 
-Symbol support requires having fast-tags installed. For this reason, symbols are disabled by default. Change the configuration to enable it.
+Symbol support requires having fast-tags or hasktags installed. For this reason, symbols are disabled by default. Change the configuration to enable it.
 
 Features:
 - `check`: Works best when configured to run "onSave" with autosave turned on. "onChange" is experimental and may cause problems with type, info, and "Peek/Go to definition" until a newer version of ghc-mod has improved support for map-file.
@@ -90,21 +90,22 @@ The following options can be set in workspace or user preferences:
     "type": "string",
     "enum": [
         "none",
-        "fast-tags"
+        "fast-tags",
+        "hasktags"
     ],
     "default": "none",
     "description": "Selects a symbol provider."
 },
 "haskell.symbols.executablePath": {
     "type": "string",
-    "default": "fast-tags",
-    "description": "Full path to The symbol provider. Extension may behave unexpectedly if the symbol provider setting is for a different command than the path provided."
+    "default": "",
+    "description": "Leave blank to use the default command for the selected provider (i.e. 'fast-tags'), otherwise set the full path to the executable. Extension may behave unexpectedly if the symbol provider setting is for a different command than the path provided."
 }
 ```
 
 ## Changelog
 __0.4.0__
-- Added "Go to symbol"/"Show all symbols" support. Thanks to @archaeron for the feature.
+- Added "Go to symbol"/"Show all symbols" support based on fast-tags or hasktags. Thanks to @archaeron for starting the feature.
 
 __0.3.0__
 - Added "insert type" command. Thanks to @theor for the pull request.
