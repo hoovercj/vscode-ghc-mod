@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import { ISymbolProvider, ILogger } from '../src/interfaces';
 import { HaskTagsSymbolProvider } from '../src/symbolProviders/haskTagsSymbolProvider';
 import { DocumentSymbolParams, SymbolInformation, SymbolKind, 
-         Location, Range, Position } from 'vscode-languageserver'
+         Location, Range, Position } from 'vscode-languageserver';
 import { Files } from '../src/utils/files';
 import * as path from 'path';
 import { TestLogger } from './helpers/testLogger';

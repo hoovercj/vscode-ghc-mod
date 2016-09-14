@@ -8,7 +8,7 @@ import {
     Range, Position, Location, Files as VscodeFiles
 } from 'vscode-languageserver';
 import { ILogger } from '../interfaces';
-import { AbstractTagsSymbolProvider } from './abstractTagsSymbolProvider'
+import { AbstractTagsSymbolProvider } from './abstractTagsSymbolProvider';
 import { Files } from '../utils/files';
 
 export class HaskTagsSymbolProvider extends AbstractTagsSymbolProvider {

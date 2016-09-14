@@ -33,7 +33,7 @@ import { RemoteConnectionAdapter } from './utils/remoteConnectionAdapter';
 let logger: ILogger;
 
 import { FastTagsSymbolProvider } from './symbolProviders/fastTagsSymbolProvider';
-import { HaskTagsSymbolProvider } from './symbolProviders/haskTagsSymbolProvider'
+import { HaskTagsSymbolProvider } from './symbolProviders/haskTagsSymbolProvider';
 
 // Create a connection for the server. The connection uses
 // stdin / stdout for message passing
