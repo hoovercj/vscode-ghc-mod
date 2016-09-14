@@ -1,4 +1,9 @@
-import { Diagnostic, Position, Location } from 'vscode-languageserver';
+/* --------------------------------------------------------------------------------------------
+ * Copyright (c) Cody Hoover. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ * ------------------------------------------------------------------------------------------ */
+import { Diagnostic, Position, Location,
+         DocumentSymbolParams, SymbolInformation } from 'vscode-languageserver';
 
 export enum LogLevel {
     none,
@@ -15,6 +20,7 @@ export enum CheckTrigger {
 }
 
 export interface ILogger {
+    setLogger(any): void;
     setLogLevel(level: LogLevel): void;
     error(message: string): void;
     warn(message: string): void;
@@ -40,4 +46,9 @@ export interface IGhcModProvider {
     getInfo(text: string, uri: string, position: Position, mapFile:boolean): Promise<string>;
     getDefinitionLocation(text: string, uri: string, position: Position, root: string): Promise<Location[]>;
     shutdown(): void;
+}
+
+export interface ISymbolProvider {
+    getSymbolsForFile(documentSymbolParams : DocumentSymbolParams) : SymbolInformation[] | Thenable<SymbolInformation[]>;
+    getSymbolsForWorkspace(options, cancellationToken): SymbolInformation[] | Thenable<SymbolInformation[]>;
 }

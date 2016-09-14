@@ -1,4 +1,4 @@
-import { IGhcMod, GhcModCmdOpts } from '../../src/ghcModInterfaces';
+import { IGhcMod, GhcModCmdOpts } from '../../src/interfaces';
 
 export class TestGhcMod implements IGhcMod {
 

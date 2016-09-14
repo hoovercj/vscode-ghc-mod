@@ -32,7 +32,7 @@ export function activate(context: ExtensionContext) {
         documentSelector: ['haskell'],
         synchronize: {
             // Synchronize the setting section 'ghcMod' to the server
-            configurationSection: 'haskell.ghcMod'
+            configurationSection: 'haskell'
         }
     };
 

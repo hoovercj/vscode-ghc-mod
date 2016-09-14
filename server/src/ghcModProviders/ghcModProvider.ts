@@ -4,8 +4,9 @@
  * ------------------------------------------------------------------------------------------ */
 'use strict';
 
-import { ILogger, IGhcModProvider, IGhcMod, GhcModCmdOpts } from './ghcModInterfaces';
-import { DocumentUtils } from './utils/document';
+import { ILogger, IGhcModProvider, IGhcMod, GhcModCmdOpts } from '../interfaces';
+import { DocumentUtils } from '../utils/document';
+import { Files } from '../utils/files';
 import {
     Diagnostic, DiagnosticSeverity, Range, Position, Location
 } from 'vscode-languageserver';
@@ -121,7 +122,7 @@ export class GhcModProvider implements IGhcModProvider
             return true;
         }
 
-        // Explore this regex from the haskell textmate bundle
+        // TODO Explore this regex from the haskell textmate bundle
         // (^[ \t]+)?(?=--+((?![\p{S}\p{P}])|[(),;\[\]`{}_"']))
         return false;
     }
@@ -133,20 +134,13 @@ export class GhcModProvider implements IGhcModProvider
         do {
             match = regex.exec(text);
             if (match) {
-                let uri = this.filepathToUri(<string>match[1]);
+                let uri = Files.filepathToUri(<string>match[1], this.workspaceRoot);
                 let range = Range.create(parseInt(match[2], 10) - 1, parseInt(match[3], 10) - 1,
                                          parseInt(match[2], 10) - 1, parseInt(match[3], 10) - 1);
                 locations.push(Location.create(uri, range));
             }
         } while (match);
         return locations;
-    }
-
-    private filepathToUri(filepath: string): string {
-        if (!Path.isAbsolute(filepath)) {
-            filepath = Path.join(this.workspaceRoot || '', filepath || '');
-        }
-        return `file:///${filepath.replace('\\', '/')}`;
     }
 
     private getRelativePath(filepath: string): string {

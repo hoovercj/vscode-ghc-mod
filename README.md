@@ -10,6 +10,7 @@ To properly run and debug the extension, the `client` and `server` directories s
 
 ## Prerequisites
 The extension assumes `ghc-mod` is installed and on the system PATH OR is configured via `haskell.ghc-mod.executablePath` in user or workspace settings. I installed `ghc-mod` on windows via `cabal` using [these instructions][ghc-mod-instructions] and it is working.
+New symbol support also assumes `fast-tags` or `hasktags` are installed in a similar manner to `ghc-mod`.
 
 ## Running the extension
 To get the application running, clone the whole repository and run `npm install` and `npm run compile` in both the `client` and `server` directories. Then open the `client` folder in an instance of VS Code and press `F5` to start debugging. This will launch the extension in a new instance of VS Code called the extension host.
@@ -34,6 +35,10 @@ There are three main components with distinct responsibilities. `server.ts` is r
 - `ghc-mod check`
 - `ghc-mod info`
 - `ghc-mod type`
+- `Go to definition`
+- `Insert type`
+- `Go to symbol`
+- `Show all symbols`
 
 ## Publishing
 From the client directory:

@@ -1,5 +1,9 @@
+/* --------------------------------------------------------------------------------------------
+ * Copyright (c) Cody Hoover. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ * ------------------------------------------------------------------------------------------ */
 import { IConnection, RemoteConsole, RemoteWindow } from 'vscode-languageserver';
-import { LogLevel, ILogger } from '../ghcModInterfaces';
+import { LogLevel, ILogger } from '../interfaces';
 
 export class RemoteConnectionAdapter implements ILogger {
     private logger: RemoteConsole;
@@ -10,6 +14,10 @@ export class RemoteConnectionAdapter implements ILogger {
         this.level = level || LogLevel.error;
         this.logger = connection.console;
         this.window = connection.window;
+    }
+
+    public setLogger(logger: IConnection) {
+        this.logger = logger.console;
     }
 
     public setLogLevel(level: LogLevel): void {

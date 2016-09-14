@@ -26,6 +26,9 @@ install:
   - cabal --version
   - cabal update
   - cabal install ghc-mod
+  - git clone https://github.com/hoovercj/fast-tags.git
+  - cabal install fast-tags/fast-tags.cabal
+  - cabal install hasktags
   - if [ $TRAVIS_OS_NAME == "linux" ]; then 
       export PATH="/home/travis/.cabal/bin:$PATH";
     else
