@@ -39,7 +39,6 @@ install:
   - npm run vscode:prepublish
   - cd ../server
   - npm install
-  - tsc -v
   - npm run compile
 
 script:

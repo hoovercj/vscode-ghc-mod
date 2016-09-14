@@ -7,7 +7,7 @@ import {
     SymbolKind, SymbolInformation, DocumentSymbolParams,
     Range, Position, Location, Files as VscodeFiles
 } from 'vscode-languageserver';
-import { ILogger, ISymbolProvider } from '../Interfaces';
+import { ILogger, ISymbolProvider } from '../interfaces';
 
 import { Files } from '../utils/files';
 
