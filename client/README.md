@@ -104,7 +104,7 @@ The following options can be set in workspace or user preferences:
 ```
 
 ## Changelog
-__0.4.0__
+__1.0.0__
 - Added "Go to symbol"/"Show all symbols" support based on fast-tags or hasktags. Thanks to @archaeron for starting the feature.
 
 __0.3.0__
