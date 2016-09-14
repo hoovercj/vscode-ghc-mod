@@ -8,8 +8,8 @@ Features:
 - `type` and `info`: Displayed when hovering the mouse over a symbol. See below for configuration.
 - `Go to definition`: Use `ctrl+click`, `f12`, or right-click -> "Peek/Go to definition".
 - `Insert type`: There is now a command to insert a type definition for a function on the line above. The cursor must be in the name of function so ghc-mod can find the type information for that symbol.
-- `Go to symbol`: Use `ctrl+shift+O` or type `@` in the command palette to see symbols in document.
-- `Show all symbols`: Use `ctrl+T` or type `#` in the command palette followed by a search string to search for symbols across the entire workspace.
+- NEW: `Go to symbol`: Use `ctrl+shift+O` or type `@` in the command palette to see symbols in document.
+- NEW: `Show all symbols`: Use `ctrl+T` or type `#` in the command palette followed by a search string to search for symbols across the entire workspace.
 
 For linting, please use the [haskell-linter extension][haskell-linter-extension].
 
