@@ -136,7 +136,7 @@ describe('GhcModProvider', () => {
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
             let provider: IGhcModProvider = new GhcModProvider(ghcMod,  '', logger );
-            return provider.getInfo("Any text", null, position, false).then((info) => {
+            return provider.getInfo('Any text', null, position, false).then((info) => {
                 assert.equal(info, 'Symbol\nInfo');
             });
         });

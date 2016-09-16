@@ -161,7 +161,8 @@ export class InteractiveGhcModProcess implements IGhcMod {
         // options.text represents the haskell file relevant to the command
         // In case it has not been saved, map the file to the text first
         // return Promise.resolve([]);
-        return !options.text ? Promise.resolve([]) : this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
+        return !options.text ? Promise.resolve([]) :
+            this.interact(process, `map-file ${options.uri}${EOL}${options.text}${this.EOT}`);
     }
 
     private unmapFile(process: cp.ChildProcess, options: GhcModCmdOpts): Promise<string[]> {

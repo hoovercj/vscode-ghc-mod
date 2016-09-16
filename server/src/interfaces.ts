@@ -20,7 +20,7 @@ export enum CheckTrigger {
 }
 
 export interface ILogger {
-    setLogger(any): void;
+    setLogger(logger): void;
     setLogLevel(level: LogLevel): void;
     error(message: string): void;
     warn(message: string): void;
@@ -43,12 +43,12 @@ export interface IGhcMod {
 export interface IGhcModProvider {
     doCheck(text: string, uri: string, mapFile: boolean): Promise<Diagnostic[]>;
     getType(text: string, uri: string, position: Position, mapFile: boolean): Promise<string>;
-    getInfo(text: string, uri: string, position: Position, mapFile:boolean): Promise<string>;
+    getInfo(text: string, uri: string, position: Position, mapFile: boolean): Promise<string>;
     getDefinitionLocation(text: string, uri: string, position: Position, root: string): Promise<Location[]>;
     shutdown(): void;
 }
 
 export interface ISymbolProvider {
-    getSymbolsForFile(documentSymbolParams : DocumentSymbolParams) : SymbolInformation[] | Thenable<SymbolInformation[]>;
+    getSymbolsForFile(documentSymbolParams: DocumentSymbolParams): SymbolInformation[] | Thenable<SymbolInformation[]>;
     getSymbolsForWorkspace(options, cancellationToken): SymbolInformation[] | Thenable<SymbolInformation[]>;
 }

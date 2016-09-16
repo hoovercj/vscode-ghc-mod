@@ -10,14 +10,14 @@ import {
     TextDocuments, TextDocument,
     Position, InitializeResult, Hover,
     MarkedString, Files, TextDocumentChangeEvent,
-    RequestType, RequestHandler, TextDocumentPositionParams
+    RequestType, TextDocumentPositionParams
 } from 'vscode-languageserver';
 
 let uriToFilePath = Files.uriToFilePath;
 import { basename } from 'path';
 
 // Interface between VS Code extension and GHC-Mod api
-import { IGhcMod, IGhcModProvider, LogLevel, ILogger, CheckTrigger, ISymbolProvider } from './interfaces';
+import { IGhcMod, IGhcModProvider, LogLevel, ILogger, CheckTrigger } from './interfaces';
 import { InteractiveGhcModProcess, InteractiveGhcModProcessOptions } from './ghcModProviders/interactiveGhcMod';
 import { GhcModProvider } from './ghcModProviders/ghcModProvider';
 let ghcMod: IGhcMod;
@@ -79,11 +79,11 @@ interface ExtensionSettings {
         onHover: string;
         check: string;
         logLevel: string;
-    }
+    };
     symbols: {
         executablePath: string;
         provider: string;
-    }
+    };
 }
 
 let haskellConfig: ExtensionSettings = Object.create({ghcMod: {}, symbols: {}});
@@ -98,7 +98,7 @@ connection.onDidChangeConfiguration((change) => {
     let oldSettings = haskellConfig;
     haskellConfig = change.settings.haskell;
     logger.setLogLevel(LogLevel[haskellConfig.ghcMod.logLevel]);
-    mapFiles = CheckTrigger[haskellConfig.ghcMod.check] == CheckTrigger.onChange;
+    mapFiles = CheckTrigger[haskellConfig.ghcMod.check] === CheckTrigger.onChange;
 
     if (oldSettings.ghcMod.executablePath !== haskellConfig.ghcMod.executablePath) {
         initializeGhcMod();
@@ -111,7 +111,7 @@ connection.onDidChangeConfiguration((change) => {
     initializeSymbolProvider();
 });
 
-function initializeGhcMod() {
+function initializeGhcMod(): void {
     // Shutdown existing provider if it exists
     if (ghcModProvider) {
         ghcModProvider.shutdown();
@@ -144,11 +144,11 @@ function initializeGhcMod() {
 function initializeSymbolProvider(): void {
     let symbolProvider = null;
 
-    switch(haskellConfig.symbols.provider) {
-        case "fast-tags":
+    switch (haskellConfig.symbols.provider) {
+        case 'fast-tags':
             symbolProvider = new FastTagsSymbolProvider(haskellConfig.symbols.executablePath, workspaceRoot, logger);
             break;
-        case "hasktags":
+        case 'hasktags':
             symbolProvider = new HaskTagsSymbolProvider(haskellConfig.symbols.executablePath, workspaceRoot, logger);
             break;
         default:
@@ -157,7 +157,8 @@ function initializeSymbolProvider(): void {
 
     if (symbolProvider) {
         connection.onDocumentSymbol((uri) => symbolProvider.getSymbolsForFile(uri));
-        connection.onWorkspaceSymbol((query, cancellationToken) => symbolProvider.getSymbolsForWorkspace(query, cancellationToken));
+        connection.onWorkspaceSymbol((query, cancellationToken) =>
+            symbolProvider.getSymbolsForWorkspace(query, cancellationToken));
     } else {
         connection.onDocumentSymbol(null);
         connection.onWorkspaceSymbol(null);
@@ -174,20 +175,20 @@ function initializeDocumentSync(): void {
     // NOT serve as a queue.
     documents.onDidSave((change) => {
         dirtyDocuments.delete(change.document.uri);
-        if(CheckTrigger[haskellConfig.ghcMod.check] == CheckTrigger.onSave || haskellConfig.ghcMod.check == "true") {
+        if (CheckTrigger[haskellConfig.ghcMod.check] === CheckTrigger.onSave || haskellConfig.ghcMod.check === 'true') {
             handleChangeEvent(change);
         }
     });
 
     documents.onDidChangeContent((change) => {
         dirtyDocuments.add(change.document.uri);
-        if(CheckTrigger[haskellConfig.ghcMod.check] == CheckTrigger.onChange) {
+        if (CheckTrigger[haskellConfig.ghcMod.check] === CheckTrigger.onChange) {
             handleChangeEvent(change);
         }
     });
 }
 
-function handleChangeEvent(change: TextDocumentChangeEvent) {
+function handleChangeEvent(change: TextDocumentChangeEvent): void {
     let key: string = uriToFilePath(change.document.uri);
     let delayer: ThrottledDelayer<void> = documentChangedDelayers[key];
     if (!delayer) {
@@ -225,14 +226,21 @@ function initializeOnDefinition(): void {
 }
 
 namespace InsertTypeRequest {
-    export const type: RequestType<Number,string,void> = { get method() { return 'insertType'; } };
+    'use strict';
+    export const type: RequestType<Number, string, void> = { get method(): string { return 'insertType'; } };
 }
+
 function initializeOnCommand(): void {
-    connection.onRequest<TextDocumentPositionParams,string,void>(InsertTypeRequest.type, (documentInfo:TextDocumentPositionParams): any => {
-        logger.log(`Received InsertType request for ${basename(documentInfo.textDocument.uri)} at ${documentInfo.position.line}:${documentInfo.position.character}`);
+    connection.onRequest<TextDocumentPositionParams, string, void>
+            (InsertTypeRequest.type, (documentInfo: TextDocumentPositionParams): Promise<string> => {
+        let filename = basename(documentInfo.textDocument.uri);
+        let line = documentInfo.position.line;
+        let character = documentInfo.position.character;
+        logger.log(`Received InsertType request for ${filename} at ${line}:${character}`);
+
         let document = documents.get(documentInfo.textDocument.uri);
-        var mapFile = mapFiles && dirtyDocuments.has(document.uri);
-        return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), documentInfo.position, mapFile)
+        let mapFile = mapFiles && dirtyDocuments.has(document.uri);
+        return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), documentInfo.position, mapFile);
     });
 }
 
@@ -256,7 +264,7 @@ function getInfoOrTypeHover(document: TextDocument, position: Position): Promise
         return null;
     }
 
-    var mapFile = mapFiles && dirtyDocuments.has(document.uri);
+    let mapFile = mapFiles && dirtyDocuments.has(document.uri);
 
     return Promise.resolve().then(() => {
         if (haskellConfig.ghcMod.onHover === 'info' || haskellConfig.ghcMod.onHover === 'fallback') {
@@ -280,13 +288,16 @@ function getInfoOrTypeHover(document: TextDocument, position: Position): Promise
 }
 
 function ghcCheck(document: TextDocument): Promise<void> {
-    var mapFile = mapFiles && dirtyDocuments.has(document.uri);
+    let mapFile = mapFiles && dirtyDocuments.has(document.uri);
     return Promise.resolve().then(() => {
-        if (!ghcMod || !ghcModProvider || CheckTrigger[haskellConfig.ghcMod.check] == CheckTrigger.off) {
+        if (!ghcMod || !ghcModProvider || CheckTrigger[haskellConfig.ghcMod.check] === CheckTrigger.off) {
             connection.sendDiagnostics({uri: document.uri, diagnostics: []});
         } else {
             ghcModProvider.doCheck(document.getText(), uriToFilePath(document.uri), mapFile).then((diagnostics) => {
-                connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics.slice(0, haskellConfig.ghcMod.maxNumberOfProblems) });
+                connection.sendDiagnostics({
+                    uri: document.uri,
+                    diagnostics: diagnostics.slice(0, haskellConfig.ghcMod.maxNumberOfProblems)
+                });
             });
         }
     });
