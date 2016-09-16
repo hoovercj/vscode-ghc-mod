@@ -4,12 +4,9 @@
  * ------------------------------------------------------------------------------------------ */
 import * as cp from 'child_process';
 import {
-    SymbolKind, SymbolInformation, DocumentSymbolParams,
-    Range, Position, Location, Files as VscodeFiles
+    SymbolInformation, DocumentSymbolParams,
 } from 'vscode-languageserver';
 import { ILogger, ISymbolProvider } from '../interfaces';
-
-import { Files } from '../utils/files';
 
 export abstract class AbstractTagsSymbolProvider implements ISymbolProvider {
 
@@ -23,10 +20,11 @@ export abstract class AbstractTagsSymbolProvider implements ISymbolProvider {
         this.logger = logger;
     }
 
-    protected abstract getFileSymbolsCommand(documentSymbolParams : DocumentSymbolParams): string;
+    protected abstract getFileSymbolsCommand(documentSymbolParams: DocumentSymbolParams): string;
     protected abstract getWorkspaceSymbolsCommand(): string;
+    protected abstract parseTags(rawTags: String): SymbolInformation[];
 
-    public getSymbolsForFile(documentSymbolParams : DocumentSymbolParams): Thenable<SymbolInformation[]> {
+    public getSymbolsForFile(documentSymbolParams: DocumentSymbolParams): Thenable<SymbolInformation[]> {
         let command = this.getFileSymbolsCommand(documentSymbolParams);
         return this.getSymbols(command);
     }
@@ -35,8 +33,8 @@ export abstract class AbstractTagsSymbolProvider implements ISymbolProvider {
         let command = this.getWorkspaceSymbolsCommand();
         return this.getSymbols(command).then(symbols => {
             return symbols.filter(documentSymbol => {
-                return documentSymbol.name.toLowerCase().indexOf(options.query.toLowerCase()) >= 0
-            })
+                return documentSymbol.name.toLowerCase().indexOf(options.query.toLowerCase()) >= 0;
+            });
         });
     }
 
@@ -45,7 +43,7 @@ export abstract class AbstractTagsSymbolProvider implements ISymbolProvider {
             this.logger.log(command);
             cp.exec(command, (error, stdout, stderr) => {
                 let errorMessage = '';
-                if(error) {
+                if (error) {
                     errorMessage += JSON.stringify(error);
                     errorMessage += '\n';
                 }
@@ -62,6 +60,4 @@ export abstract class AbstractTagsSymbolProvider implements ISymbolProvider {
             });
         });
     }
-
-    protected abstract parseTags(rawTags : String) : SymbolInformation[];
 }

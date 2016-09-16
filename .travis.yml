@@ -43,3 +43,6 @@ install:
 
 script:
   - npm test
+  - npm run tslint
+  - cd ../client
+  - npm run tslint

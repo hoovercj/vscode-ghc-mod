@@ -8,11 +8,11 @@ import * as path from 'path';
 import { ExtensionContext, workspace } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient';
 import { Commands } from './commands';
-import { Logger } from './utils/logger'
+import { Logger } from './utils/logger';
 
-export function activate(context: ExtensionContext) {
+export function activate(context: ExtensionContext): void {
     setLogLevel();
-    workspace.onDidChangeConfiguration(setLogLevel); 
+    workspace.onDidChangeConfiguration(setLogLevel);
 
     // The server is implemented in node
     let serverModule = context.asAbsolutePath(path.join('server', 'src', 'server.js'));
@@ -46,7 +46,7 @@ export function activate(context: ExtensionContext) {
     Commands.register(context, languageClient);
 }
 
-function setLogLevel() {
+function setLogLevel(): void {
     let config = workspace.getConfiguration('haskell.ghcMod');
     let logLevel = config.get('logLevel', 'error');
     Logger.setLogLevel(Logger.LogLevel[logLevel]);

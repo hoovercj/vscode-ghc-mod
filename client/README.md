@@ -104,6 +104,9 @@ The following options can be set in workspace or user preferences:
 ```
 
 ## Changelog
+__1.0.1__
+- Fixed path to uri issue on non-windows systems.
+
 __1.0.0__
 - Added "Go to symbol"/"Show all symbols" support based on fast-tags or hasktags. Thanks to @archaeron for starting the feature.
 

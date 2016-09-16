@@ -6,15 +6,14 @@
 
 import { ILogger, IGhcModProvider, IGhcMod, GhcModCmdOpts } from '../interfaces';
 import { DocumentUtils } from '../utils/document';
-import { Files } from '../utils/files';
 import {
     Diagnostic, DiagnosticSeverity, Range, Position, Location
 } from 'vscode-languageserver';
 
-let Path = require('path');
+const path = require('path');
+const fileUrl = require('file-url');
 
-export class GhcModProvider implements IGhcModProvider
- {
+export class GhcModProvider implements IGhcModProvider {
     private ghcMod: IGhcMod;
     private logger: ILogger;
     private workspaceRoot: string;
@@ -71,7 +70,8 @@ export class GhcModProvider implements IGhcModProvider
         this.ghcMod.killProcess();
     }
 
-    public getDefinitionLocation(text: string, uri: string, position: Position, root: string): Promise<Location | Location[]> {
+    public getDefinitionLocation(text: string, uri: string, position: Position, root: string):
+            Promise<Location | Location[]> {
         return this.getInfoHelper(text, uri, position, false).then((info) => {
             return this.parseInfoForDefinition(info, root);
         });
@@ -82,7 +82,7 @@ export class GhcModProvider implements IGhcModProvider
         let word = DocumentUtils.getWordAtPosition(text, position);
 
         // Fix for https://github.com/hoovercj/vscode-ghc-mod/issues/11
-        if (word == '->') {
+        if (word === '->') {
             word = '(->)';
         }
 
@@ -91,7 +91,7 @@ export class GhcModProvider implements IGhcModProvider
             word = null;
         }
 
-        if(word && word.trim()) {
+        if (word && word.trim()) {
             return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
                 command: 'info',
                 text: mapFile ? text : null,
@@ -103,22 +103,21 @@ export class GhcModProvider implements IGhcModProvider
         } else {
             return Promise.resolve('');
         }
-
     }
-    
+
     private isBlacklisted(word: string): boolean {
         // if a string contains the comment sequence: --
         if (/.*--.*/g.test(word)) {
             return true;
         }
-        
+
         // if a string contains the comment sequences: {\- {- -} -\}
         // if (new RegExp("\{\\?-|-\\?\}", "g").test(word)) {
-        if (new RegExp("{-|-}", "g").test(word)) {
+        if (new RegExp('{-|-}', 'g').test(word)) {
             return true;
         }
 
-        if (word.indexOf('-\\}') != -1 || word.indexOf('{\\-') != -1) {
+        if (word.indexOf('-\\}') !== -1 || word.indexOf('{\\-') !== -1) {
             return true;
         }
 
@@ -134,7 +133,7 @@ export class GhcModProvider implements IGhcModProvider
         do {
             match = regex.exec(text);
             if (match) {
-                let uri = Files.filepathToUri(<string>match[1], this.workspaceRoot);
+                let uri = fileUrl(<string>match[1], { resolve: true});
                 let range = Range.create(parseInt(match[2], 10) - 1, parseInt(match[3], 10) - 1,
                                          parseInt(match[2], 10) - 1, parseInt(match[3], 10) - 1);
                 locations.push(Location.create(uri, range));
@@ -144,7 +143,7 @@ export class GhcModProvider implements IGhcModProvider
     }
 
     private getRelativePath(filepath: string): string {
-        return Path.relative(this.workspaceRoot || '', filepath || '');
+        return path.relative(this.workspaceRoot || '', filepath || '');
     }
 
     private parseTypeInfo(line: string, position: Position): string {

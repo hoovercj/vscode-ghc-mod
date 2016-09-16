@@ -1,24 +1,27 @@
 {
 	"name": "vscode-ghc-mod-server",
 	"description": "Implementation of a language server for ghc-mod.",
-	"version": "0.3.1",
+	"version": "1.0.1",
 	"author": "Cody Hoover",
-    "publisher":"hoovercj",
+	"publisher":"hoovercj",
 	"license": "MIT",
 	"engines": {
 		"node": "*"
 	},
 	"dependencies": {
 		"vscode-languageserver": "2.2.0",
-        "promise-queue": "*"
+		"promise-queue": "*",
+		"file-url": "1.1.0"
 	},
 	"devDependencies": {
 		"typescript": "^1.8.10",
-		"mocha": "^2.3.4"
+		"mocha": "^2.3.4",
+		"tslint": "3.15.1"
 	},
 	"scripts": {
 		"compile": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
 		"watch": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc --watch -p .",
-        "test": "mocha --recursive ../client/server/test" 
+		"test": "mocha --recursive ../client/server/test",
+		"tslint": "tslint -c tslint.json 'src/**/*.ts' 'test/**/*.ts'"
 	}
 }

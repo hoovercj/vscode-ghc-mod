@@ -16,7 +16,7 @@ export class RemoteConnectionAdapter implements ILogger {
         this.window = connection.window;
     }
 
-    public setLogger(logger: IConnection) {
+    public setLogger(logger: IConnection): void {
         this.logger = logger.console;
     }
 
