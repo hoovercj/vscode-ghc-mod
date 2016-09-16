@@ -24,7 +24,7 @@ Run `npm run compile` from the client and server directories depending on which 
 ## Testing the extension
 ### Mocha test runner via npm
 `npm test` from the server directory will run tests against the most recently compiled version of the code. The test command does NOT currently build the application.
-
+`npm run tslint` from the server and client directories will run tslint. tslint must pass for the build to pass.
 ### Wallabyjs
 This project includes a wallaby.js configuration file which should automatically work if the [wallabyjs](https://marketplace.visualstudio.com/items/WallabyJs.wallaby-vscode) extension is installed. Simply open the server folder in VS Code and issue the `start` command to wallabyjs (ctrl+shift+R, R).
 
