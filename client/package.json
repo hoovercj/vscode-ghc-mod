@@ -44,7 +44,7 @@
                 },
                 "haskell.ghcMod.executablePath": {
                     "type": "string",
-                    "default": "ghc-mod",
+                    "default": "ghc-modi",
                     "description": "The full path to the ghc-mod executable."
                 },
                 "haskell.ghcMod.onHover": {
