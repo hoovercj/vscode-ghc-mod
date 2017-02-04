@@ -95,24 +95,17 @@ export class GhcModProvider implements IGhcModProvider {
         }
     }
 
-    private isBlacklisted(word: string): boolean {
-        // if a string contains the comment sequence: --
-        if (/.*--.*/g.test(word)) {
+    private isBlacklisted(symbol: string): boolean {
+        // Reserved operator that crashes ghc-mod info
+        if (symbol === "->") {
             return true;
         }
 
-        // if a string contains the comment sequences: {\- {- -} -\}
-        // if (new RegExp("\{\\?-|-\\?\}", "g").test(word)) {
-        if (new RegExp('{-|-}', 'g').test(word)) {
+        // No legal lexeme starts with "{-"
+        if (symbol.slice(0, 2) === "{-") {
             return true;
         }
 
-        if (word.indexOf('-\\}') !== -1 || word.indexOf('{\\-') !== -1) {
-            return true;
-        }
-
-        // TODO Explore this regex from the haskell textmate bundle
-        // (^[ \t]+)?(?=--+((?![\p{S}\p{P}])|[(),;\[\]`{}_"']))
         return false;
     }
 
