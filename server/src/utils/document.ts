@@ -1,21 +1,32 @@
 import { Position, Range } from 'vscode-languageserver';
 
 export class DocumentUtils {
-    public static getWordAtPosition(text: string, position: Position): string {
-        if (text === null || position === null) {
-            return '';
+    public static getSymbolAtOffset(text: String, offset: number): string {
+        let symbolRegex = /^[!#$%&*+./<=>?@\\^|\-~:]+$/;
+        let identifierRegex = /^[a-zA-Z][a-zA-Z0-9']*$/;
+        var symbol = '';
+
+        if (text === null || offset === null) {
+            // Do nothing and return empty string
+        } else if (symbolRegex.test(text.charAt(offset))) {
+            var start = offset;
+            var end = offset;
+
+            for (; symbolRegex.test(text.charAt(start - 1)); start--) {}
+            for (; symbolRegex.test(text.charAt(end)); end++) {}
+
+            symbol = text.substring(start, end);
+        } else if (identifierRegex.test(text.charAt(offset))) {
+            var start = offset;
+            var end = offset;
+
+            for (; identifierRegex.test(text.charAt(start - 1)); start--) {}
+            for (; identifierRegex.test(text.charAt(end)); end++) {}
+
+            symbol = text.substring(start, end);
         }
-        let line = text.split('\n')[position.line];
-        if (line) {
-            let startPosition = line.lastIndexOf(' ', position.character) + 1;
-            let endPosition = line.indexOf(' ', position.character);
-            if (endPosition < 0) {
-                endPosition = line.length;
-            }
-            let ret = line.slice(startPosition, endPosition).replace(/[(),]/, '');
-            return ret;
-        }
-        return '';
+
+        return symbol;
     }
 
     public static isPositionInRange(position: Position, range: Range): boolean {

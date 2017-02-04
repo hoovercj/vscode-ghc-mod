@@ -4,46 +4,41 @@ import { DocumentUtils } from '../../src/utils/document';
 import { Position, Range } from 'vscode-languageserver';
 
 describe('DocumentUtils', () => {
-    describe('#getgetWordAtPosition', () => {
-        let text = 'Typescript is fun.\nHaskell is too.';
-
-        it ('should return the word at the position', () => {
-            let position = Position.create(1, 0);
-            assert.equal(DocumentUtils.getWordAtPosition(text, position), 'Haskell');
+    describe('#getSymbolAtPosition', () => {
+        it ('should return entire string if entire string is a symbol', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('identifier', 3), 'identifier');
         });
 
-        it ('should return an empty string if the word the position is a space', () => {
-            let position = Position.create(0, 10);
-            assert.equal(DocumentUtils.getWordAtPosition(text, position), '');
+        it ('should return a single character operator', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('+', 0), '+');
         });
 
-        it ('should return the first word of the line if the start character is negative', () => {
-            let position = Position.create(0, -4);
-            assert.equal(DocumentUtils.getWordAtPosition(text, position), 'Typescript');
+        it ('should return a single character identifier', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('x', 0), 'x');
         });
 
-        it ('should return the last word of the line if the start character exceeds line length', () => {
-            let position = Position.create(0, Number.MAX_VALUE);
-            assert.equal(DocumentUtils.getWordAtPosition(text, position), 'fun.');
+        it ('should return entire symbol if it is bracketed by whitespace', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset(' function ', 3), 'function');
         });
 
-        it ('should return an empty string if the line number is negative', () => {
-            let position = Position.create(-1, 4);
-            assert.equal(DocumentUtils.getWordAtPosition(text, position), '');
+        it ('should return operator if it is bracketed by identifiers', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('x*x', 1), '*');
         });
 
-        it ('should return an empty string if the line number exceeds the lines of text', () => {
-            let position = Position.create(4, 4);
-            assert.equal(DocumentUtils.getWordAtPosition(text, position), '');
+        it ('should return operator even if it contains two dashes', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('|--', 0), '|--');
+        });
+
+        it ('should return an empty string if the position is a space', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset(' ', 0), '');
         });
 
         it ('should return an empty string if the text is null', () => {
-            let position = Position.create(0, 0);
-            assert.equal(DocumentUtils.getWordAtPosition(null, position), '');
+            assert.equal(DocumentUtils.getSymbolAtOffset(null, 0), '');
         });
 
         it ('should return an empty string if the position is null', () => {
-            assert.equal(DocumentUtils.getWordAtPosition(text, null), '');
+            assert.equal(DocumentUtils.getSymbolAtOffset('text', null), '');
         });
     });
 

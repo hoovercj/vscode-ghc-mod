@@ -7,7 +7,7 @@
 import { ILogger, IGhcModProvider, IGhcMod, GhcModCmdOpts } from '../interfaces';
 import { DocumentUtils } from '../utils/document';
 import {
-    Diagnostic, DiagnosticSeverity, Range, Position, Location
+    Diagnostic, DiagnosticSeverity, Range, Position, Location, TextDocument
 } from 'vscode-languageserver';
 
 const path = require('path');
@@ -55,8 +55,8 @@ export class GhcModProvider implements IGhcModProvider {
         });
     }
 
-    public getInfo(text: string, uri: string, position: Position, mapFile: boolean): Promise<string> {
-        return this.getInfoHelper(text, uri, position, mapFile).then((info) => {
+    public getInfo(document: TextDocument, uri: string, position: Position, mapFile: boolean): Promise<string> {
+        return this.getInfoHelper(document, uri, position, mapFile).then((info) => {
             let tooltip = info.replace(/-- Defined at (.+?):(\d+):(\d+)/g, '');
             if (tooltip.indexOf('Cannot show info') === -1) {
                 return tooltip;
@@ -70,33 +70,23 @@ export class GhcModProvider implements IGhcModProvider {
         this.ghcMod.killProcess();
     }
 
-    public getDefinitionLocation(text: string, uri: string, position: Position, root: string):
+    public getDefinitionLocation(document: TextDocument, uri: string, position: Position, root: string):
             Promise<Location | Location[]> {
-        return this.getInfoHelper(text, uri, position, false).then((info) => {
+        return this.getInfoHelper(document, uri, position, false).then((info) => {
             return this.parseInfoForDefinition(info, root);
         });
     }
 
     // PRIVATE METHODS
-    private getInfoHelper(text: string, uri: string, position: Position, mapFile: boolean): Promise<string> {
-        let word = DocumentUtils.getWordAtPosition(text, position);
+    private getInfoHelper(document: TextDocument, uri: string, position: Position, mapFile: boolean): Promise<string> {
+        let symbol = DocumentUtils.getSymbolAtOffset(document.getText(), document.offsetAt(position));
 
-        // Fix for https://github.com/hoovercj/vscode-ghc-mod/issues/11
-        if (word === '->') {
-            word = '(->)';
-        }
-
-        // Comments make ghc-mod freakout
-        if (!word || this.isBlacklisted(word)) {
-            word = null;
-        }
-
-        if (word && word.trim()) {
+        if (symbol && !this.isBlacklisted(symbol)) {
             return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
                 command: 'info',
-                text: mapFile ? text : null,
+                text: mapFile ? document.getText() : null,
                 uri: this.getRelativePath(uri),
-                args: [word]
+                args: [symbol]
             }).then((lines) => {
                 return lines.join('\n');
             });
