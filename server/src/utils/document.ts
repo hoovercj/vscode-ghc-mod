@@ -1,29 +1,33 @@
 import { Position, Range } from 'vscode-languageserver';
 
 export class DocumentUtils {
-    public static getSymbolAtOffset(text: String, offset: number): string {
-        let symbolRegex = /^[!#$%&*+./<=>?@\\^|\-~:]+$/;
-        let identifierRegex = /^[a-zA-Z][a-zA-Z0-9']*$/;
-        var symbol = '';
+    public static getSymbolAtOffset(text: string, offset: number): string {
+        // Identifier, defined as varid and conid in the lexical structure chapter of the Haskell Report
+        const identifierCharacterClass = '[a-zA-Z0-9\']';
+        const identifierCharacterRegex = new RegExp('^' + identifierCharacterClass + '$');
+
+        // Operator symbols, defined as varsym and consym in the lexical structure chapter of the Haskell Report
+        const operatorCharacterClass = '[!#$%&*+.\\\/<=>?@\\\\\\^|\\-~:]';
+        const operatorCharacterRegex = new RegExp('^' + operatorCharacterClass + '$');
 
         if (text === null || offset === null) {
-            // Do nothing and return empty string
-        } else if (symbolRegex.test(text.charAt(offset))) {
-            var start = offset;
-            var end = offset;
+            return '';
+        }
 
-            for (; symbolRegex.test(text.charAt(start - 1)); start--) {}
-            for (; symbolRegex.test(text.charAt(end)); end++) {}
+        const character = text.charAt(offset);
+        const isIdentifier = identifierCharacterRegex.test(character);
+        const isOperator = operatorCharacterRegex.test(character);
 
-            symbol = text.substring(start, end);
-        } else if (identifierRegex.test(text.charAt(offset))) {
-            var start = offset;
-            var end = offset;
-
-            for (; identifierRegex.test(text.charAt(start - 1)); start--) {}
-            for (; identifierRegex.test(text.charAt(end)); end++) {}
-
-            symbol = text.substring(start, end);
+        let symbol;
+        
+        if (isIdentifier && isOperator) {
+            throw new Error("Failed to disambiguate character, cannot get symbol at offset");
+        } else if (isIdentifier) {
+            symbol = DocumentUtils.expandAtOffset(text, offset, character => identifierCharacterRegex.test(character));
+        } else if (isOperator) {
+            symbol = DocumentUtils.expandAtOffset(text, offset, character => operatorCharacterRegex.test(character));
+        } else {
+            return '';
         }
 
         // Ordinary comment is not a symbol
@@ -39,6 +43,16 @@ export class DocumentUtils {
         }
 
         return symbol;
+    }
+
+    private static expandAtOffset(text: string, offset: number, shouldIncludeCharacter: (character: string) => boolean): string {
+        let start = offset;
+        let end = offset;
+
+        for (; shouldIncludeCharacter(text.charAt(start - 1)); start--) {}
+        for (; shouldIncludeCharacter(text.charAt(end)); end++) {}
+
+        return text.substring(start, end);
     }
 
     public static isPositionInRange(position: Position, range: Range): boolean {
