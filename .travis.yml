@@ -25,7 +25,7 @@ install:
   - ghc --version
   - cabal --version
   - cabal update
-  - cabal install ghc-mod
+  - cabal install ghc-mod --constraint=extra==1.4.12 --constraint=safe==0.3.9 --constraint=hlint==1.9.35
   - git clone https://github.com/hoovercj/fast-tags.git
   - cabal install fast-tags/fast-tags.cabal
   - cabal install hasktags
