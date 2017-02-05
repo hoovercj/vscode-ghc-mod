@@ -118,27 +118,22 @@ function initializeGhcMod(): void {
         ghcModProvider = null;
     }
 
-    // Disable current listeners
-    connection.onHover(null);
-    connection.onRequest(InsertTypeRequest.type, null);
-    documents.onDidChangeContent(null);
-    documents.onDidSave(null);
-
     // Create new ghcMod and provider
     ghcMod = createGhcMod();
     if (ghcMod) {
         ghcModProvider = new GhcModProvider(ghcMod, workspaceRoot, logger);
+    } else {
+        logger.error('Try configuring user or workspace settings for haskell.ghcMod.executablePath',
+                ['Workspace', 'User'], (action) => {
+            connection.sendRequest<string, string, void>(OpenSettingsRequest.type, action);
+        });
     }
 
-    // Initialize listeners if appropriate
-    if (ghcMod && ghcModProvider) {
-        initializeDocumentSync();
-        initializeOnHover();
-        initializeOnDefinition();
-        initializeOnCommand();
-    } else {
-        connection.onDefinition(null);
-    }
+    // Initialize listeners
+    initializeDocumentSync();
+    initializeOnHover();
+    initializeOnDefinition();
+    initializeOnCommand();
 }
 
 function initializeSymbolProvider(): void {
@@ -155,15 +150,20 @@ function initializeSymbolProvider(): void {
             break;
     }
 
-    if (symbolProvider) {
-        connection.onDocumentSymbol((uri) => symbolProvider.getSymbolsForFile(uri));
-        connection.onWorkspaceSymbol((query, cancellationToken) =>
-            symbolProvider.getSymbolsForWorkspace(query, cancellationToken));
-    } else {
-        connection.onDocumentSymbol(null);
-        connection.onWorkspaceSymbol(null);
-    }
+    connection.onDocumentSymbol((uri) => {
+        if (!symbolProvider || !ghcMod || !ghcModProvider) {
+            return null;
+        }
 
+        return symbolProvider.getSymbolsForFile(uri)
+    });
+    connection.onWorkspaceSymbol((query, cancellationToken) => {
+        if (!symbolProvider || !ghcMod || !ghcModProvider) {
+            return null;
+        }
+
+        return symbolProvider.getSymbolsForWorkspace(query, cancellationToken)
+    });
 }
 
 function initializeDocumentSync(): void {
@@ -230,9 +230,19 @@ namespace InsertTypeRequest {
     export const type: RequestType<Number, string, void> = { get method(): string { return 'insertType'; } };
 }
 
+namespace OpenSettingsRequest {
+    'use strict';
+    export const type: RequestType<string, string, void> = { get method(): string { return 'openSettings'; } };
+}
+
 function initializeOnCommand(): void {
     connection.onRequest<TextDocumentPositionParams, string, void>
             (InsertTypeRequest.type, (documentInfo: TextDocumentPositionParams): Promise<string> => {
+
+        if (!ghcMod || !ghcModProvider) {
+            return null;
+        }
+
         let filename = basename(documentInfo.textDocument.uri);
         let line = documentInfo.position.line;
         let character = documentInfo.position.character;

@@ -3,15 +3,18 @@ This exension exposes ghc-mod functionality to VS Code. It requires having ghc-m
 
 Symbol support requires having fast-tags or hasktags installed. For this reason, symbols are disabled by default. Change the configuration to enable it.
 
-Features:
+## Features:
 - `check`: Works best when configured to run "onSave" with autosave turned on. "onChange" is experimental and may cause problems with type, info, and "Peek/Go to definition" until a newer version of ghc-mod has improved support for map-file.
 - `type` and `info`: Displayed when hovering the mouse over a symbol. See below for configuration.
 - `Go to definition`: Use `ctrl+click`, `f12`, or right-click -> "Peek/Go to definition".
 - `Insert type`: There is now a command to insert a type definition for a function on the line above. The cursor must be in the name of function so ghc-mod can find the type information for that symbol.
-- NEW: `Go to symbol`: Use `ctrl+shift+O` or type `@` in the command palette to see symbols in document.
-- NEW: `Show all symbols`: Use `ctrl+T` or type `#` in the command palette followed by a search string to search for symbols across the entire workspace.
+- `Go to symbol`: Use `ctrl+shift+O` or type `@` in the command palette to see symbols in document.
+- `Show all symbols`: Use `ctrl+T` or type `#` in the command palette followed by a search string to search for symbols across the entire workspace.
 
 For linting, please use the [haskell-linter extension][haskell-linter-extension].
+
+## Issues:
+If you're having problems, enable logging and open the `ghc-mod server` output channel. If you think it is a bug instead of an environment issue, search for the issue or open a new one on [github](https://github.com/hoovercj/vscode-ghc-mod/issues).
 
 ## Pictures
 ### Check
@@ -104,6 +107,11 @@ The following options can be set in workspace or user preferences:
 ```
 
 ## Changelog
+__1.1.0__
+- Closed [#43](https://github.com/hoovercj/vscode-ghc-mod/issues/43): Added ["Haskell Syntax Highlighting"](https://marketplace.visualstudio.com/items?itemName=justusadam.language-haskell) as an extension dependency
+- Closed [#40](https://github.com/hoovercj/vscode-ghc-mod/issues/40): Logging uses output channel
+- Closed [#37](https://github.com/hoovercj/vscode-ghc-mod/issues/37): When ghc-mod cannot be started, error prompt contains information and actions to change the user or workspace settings.
+
 __1.0.1__
 - Fixed path to uri issue on non-windows systems.
 
