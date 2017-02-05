@@ -1,18 +1,15 @@
 import { Position, Range } from 'vscode-languageserver';
 
+import { HaskellLexicalRules } from './haskellLexicalStructure';
+
 export class DocumentUtils {
     public static getSymbolAtOffset(text: string, offset: number): string {
-        // Identifier, defined as varid and conid in the lexical structure chapter of the Haskell Report
-        const identifierCharacterClass = '[a-zA-Z0-9\']';
-        const identifierCharacterRegex = new RegExp('^' + identifierCharacterClass + '$');
-
-        // Operator symbols, defined as varsym and consym in the lexical structure chapter of the Haskell Report
-        const operatorCharacterClass = '[!#$%&*+.\\\/<=>?@\\\\\\^|\\-~:]';
-        const operatorCharacterRegex = new RegExp('^' + operatorCharacterClass + '$');
-
         if (text === null || offset === null) {
             return '';
         }
+
+        const identifierCharacterRegex = new RegExp('^' + HaskellLexicalRules.IdentifierRegexCharacterClass + '$', 'u');
+        const operatorCharacterRegex = new RegExp('^' + HaskellLexicalRules.OperatorRegexCharacterClass + '$', 'u');
 
         const character = text.charAt(offset);
         const isIdentifier = identifierCharacterRegex.test(character);
@@ -21,7 +18,7 @@ export class DocumentUtils {
         let symbol;
         
         if (isIdentifier && isOperator) {
-            throw new Error("Failed to disambiguate character, cannot get symbol at offset");
+            throw new Error("Failed to disambiguate character '" + character + "' at offset " + offset);
         } else if (isIdentifier) {
             symbol = DocumentUtils.expandAtOffset(text, offset, character => identifierCharacterRegex.test(character));
         } else if (isOperator) {

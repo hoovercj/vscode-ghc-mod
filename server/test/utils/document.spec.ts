@@ -21,12 +21,24 @@ describe('DocumentUtils', () => {
             assert.equal(DocumentUtils.getSymbolAtOffset(' function ', 3), 'function');
         });
 
-        it ('should return operator if it is bracketed by identifiers', () => {
+        it ('should return an operator if it is bracketed by identifiers', () => {
             assert.equal(DocumentUtils.getSymbolAtOffset('x*x', 1), '*');
         });
 
-        it ('should return an operator even if it contains two dashes', () => {
+        it ('should return an operator if it contains two dashes', () => {
             assert.equal(DocumentUtils.getSymbolAtOffset('|--', 0), '|--');
+        });
+
+        it ('should return an operator if it consists of Unicode punctuation', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('»', 0), '»');
+        });
+
+        it ('should return an identifier if it consists of Unicode letters', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('ψ', 0), 'ψ');
+        });
+
+        it ('should return an operator if it consists double equal signs', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('==', 0), '==');
         });
 
         it ('should return an empty string for an ordinary comment', () => {
