@@ -22,13 +22,8 @@
         ],
         "no-arg": true,
         "no-conditional-assignment": true,
-        "no-consecutive-blank-lines": true,
-        "no-console": [true,
-            "debug",
-            "info",
-            "time",
-            "timeEnd",
-            "trace"
+        "no-consecutive-blank-lines": [
+            true
         ],
         "no-construct": true,
         "no-constructor-vars": true,
@@ -74,9 +69,10 @@
         "variable-name": [
             true,
             "check-format",
-            "ban-keywords"
+            "ban-keywords",
+            "allow-pascal-case"
         ],
-        "whitespace": [
+        "whitespace": [true,
             true,
             "check-branch",
             "check-decl",

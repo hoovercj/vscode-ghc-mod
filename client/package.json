@@ -13,7 +13,7 @@
     "homepage": "https://github.com/hoovercj/vscode-gh-mod",
     "icon": "images/icon.png",
     "license": "MIT",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "publisher": "hoovercj",
     "engines": {
         "vscode": "^1.0.0"

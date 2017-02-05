@@ -57,7 +57,7 @@ export function activate(context: ExtensionContext): void {
                 break;
         }
         return null;
-    })
+    });
 }
 
 function setLogLevel(): void {

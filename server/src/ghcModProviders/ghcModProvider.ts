@@ -79,7 +79,13 @@ export class GhcModProvider implements IGhcModProvider {
 
     // PRIVATE METHODS
     private getInfoHelper(document: TextDocument, uri: string, position: Position, mapFile: boolean): Promise<string> {
-        let symbol = DocumentUtils.getSymbolAtOffset(document.getText(), document.offsetAt(position));
+        let symbol = null;
+
+        try {
+            symbol = DocumentUtils.getSymbolAtOffset(document.getText(), document.offsetAt(position));
+        } catch (error) {
+            this.logger.warn(error);
+        }
 
         if (symbol && !this.isBlacklisted(symbol)) {
             return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
@@ -100,7 +106,7 @@ export class GhcModProvider implements IGhcModProvider {
 
     private isBlacklisted(symbol: string): boolean {
         // Reserved operator that crashes ghc-mod info
-        if (symbol === "->") {
+        if (symbol === '->') {
             return true;
         }
 

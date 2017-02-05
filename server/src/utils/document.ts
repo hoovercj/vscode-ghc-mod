@@ -16,13 +16,13 @@ export class DocumentUtils {
         const isOperator = operatorCharacterRegex.test(character);
 
         let symbol;
-        
+
         if (isIdentifier && isOperator) {
-            throw new Error("Failed to disambiguate character '" + character + "' at offset " + offset);
+            throw new Error(`Failed to disambiguate character '${character}' at offset ${offset}`);
         } else if (isIdentifier) {
-            symbol = DocumentUtils.expandAtOffset(text, offset, character => identifierCharacterRegex.test(character));
+            symbol = DocumentUtils.expandAtOffset(text, offset, char => identifierCharacterRegex.test(char));
         } else if (isOperator) {
-            symbol = DocumentUtils.expandAtOffset(text, offset, character => operatorCharacterRegex.test(character));
+            symbol = DocumentUtils.expandAtOffset(text, offset, char => operatorCharacterRegex.test(char));
         } else {
             return '';
         }
@@ -42,16 +42,6 @@ export class DocumentUtils {
         return symbol;
     }
 
-    private static expandAtOffset(text: string, offset: number, shouldIncludeCharacter: (character: string) => boolean): string {
-        let start = offset;
-        let end = offset;
-
-        for (; shouldIncludeCharacter(text.charAt(start - 1)); start--) {}
-        for (; shouldIncludeCharacter(text.charAt(end)); end++) {}
-
-        return text.substring(start, end);
-    }
-
     public static isPositionInRange(position: Position, range: Range): boolean {
         if (position === null  || range === null) {
             return false;
@@ -61,5 +51,16 @@ export class DocumentUtils {
             return false;
         }
         return true;
+    }
+
+    private static expandAtOffset(text: string, offset: number,
+            shouldIncludeCharacter: (character: string) => boolean): string {
+        let start = offset;
+        let end = offset;
+
+        for (; shouldIncludeCharacter(text.charAt(start - 1)); start--) { /* Intentionally empty */ }
+        for (; shouldIncludeCharacter(text.charAt(end)); end++) { /* Intentionally empty */ }
+
+        return text.substring(start, end);
     }
 }

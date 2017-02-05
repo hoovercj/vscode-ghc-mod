@@ -155,14 +155,14 @@ function initializeSymbolProvider(): void {
             return null;
         }
 
-        return symbolProvider.getSymbolsForFile(uri)
+        return symbolProvider.getSymbolsForFile(uri);
     });
     connection.onWorkspaceSymbol((query, cancellationToken) => {
         if (!symbolProvider || !ghcMod || !ghcModProvider) {
             return null;
         }
 
-        return symbolProvider.getSymbolsForWorkspace(query, cancellationToken)
+        return symbolProvider.getSymbolsForWorkspace(query, cancellationToken);
     });
 }
 

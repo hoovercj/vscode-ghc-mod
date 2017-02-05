@@ -36,7 +36,7 @@ export class RemoteConnectionAdapter implements ILogger {
             this.logger.info(message);
             console.info(message);
             if (actions && callback) {
-                let messageActionItems = actions.map((action) => { return <MessageActionItem>{ title: action }; })
+                let messageActionItems = actions.map((action) => { return <MessageActionItem>{ title: action }; });
                 this.window.showInformationMessage(message, ...messageActionItems).then(selected => {
                     callback(selected.title);
                 });
@@ -49,7 +49,7 @@ export class RemoteConnectionAdapter implements ILogger {
             this.logger.warn(message);
             console.warn(message);
             if (actions && callback) {
-                let messageActionItems = actions.map((action) => { return <MessageActionItem>{ title: action }; })
+                let messageActionItems = actions.map((action) => { return <MessageActionItem>{ title: action }; });
                 this.window.showWarningMessage(message, ...messageActionItems).then(selected => {
                     callback(selected.title);
                 });
@@ -63,7 +63,7 @@ export class RemoteConnectionAdapter implements ILogger {
             this.window.showErrorMessage(message);
             console.error(message);
             if (actions && callback) {
-                let messageActionItems = actions.map((action) => { return <MessageActionItem>{ title: action }; })
+                let messageActionItems = actions.map((action) => { return <MessageActionItem>{ title: action }; });
                 this.window.showErrorMessage(message, ...messageActionItems).then(selected => {
                     callback(selected.title);
                 });
