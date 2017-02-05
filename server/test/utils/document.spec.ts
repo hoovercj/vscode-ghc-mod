@@ -25,8 +25,20 @@ describe('DocumentUtils', () => {
             assert.equal(DocumentUtils.getSymbolAtOffset('x*x', 1), '*');
         });
 
-        it ('should return operator even if it contains two dashes', () => {
+        it ('should return an operator even if it contains two dashes', () => {
             assert.equal(DocumentUtils.getSymbolAtOffset('|--', 0), '|--');
+        });
+
+        it ('should return an empty string for an ordinary comment', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('--comment', 0), '');
+        });
+
+        it ('should return an empty string for start of nested comment', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('{-', 1), '');
+        });
+
+        it ('should return an empty string for end of nested comment', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('-}', 0), '');
         });
 
         it ('should return an empty string if the position is a space', () => {

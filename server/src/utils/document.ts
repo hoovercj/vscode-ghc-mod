@@ -26,6 +26,18 @@ export class DocumentUtils {
             symbol = text.substring(start, end);
         }
 
+        // Ordinary comment is not a symbol
+        if (symbol === '--') {
+            return '';
+        }
+
+        // Nested coment open/close are not symbols
+        if (symbol === '-') {
+            if (text.charAt(offset - 1) === '{' || text.charAt(offset + 1) === '}') {
+                return '';
+            }
+        }
+
         return symbol;
     }
 

@@ -101,11 +101,6 @@ export class GhcModProvider implements IGhcModProvider {
             return true;
         }
 
-        // No legal lexeme starts with "{-"
-        if (symbol.slice(0, 2) === "{-") {
-            return true;
-        }
-
         return false;
     }
 
