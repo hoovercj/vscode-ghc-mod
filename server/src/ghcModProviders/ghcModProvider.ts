@@ -98,6 +98,9 @@ export class GhcModProvider implements IGhcModProvider {
                 uri: this.getRelativePath(uri),
                 args: [word]
             }).then((lines) => {
+                if (!lines) {
+                    return '';
+                }
                 return lines.join('\n');
             });
         } else {

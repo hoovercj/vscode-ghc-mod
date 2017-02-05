@@ -111,5 +111,8 @@
     },
     "dependencies": {
         "vscode-languageclient": "2.2.1"
-    }
+    },
+    "extensionDependencies": [
+        "justusadam.language-haskell"
+    ]
 }

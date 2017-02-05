@@ -22,10 +22,10 @@ export enum CheckTrigger {
 export interface ILogger {
     setLogger(logger): void;
     setLogLevel(level: LogLevel): void;
-    error(message: string): void;
-    warn(message: string): void;
+    error(message: string, actions?: string[], callback?): void;
+    warn(message: string, actions?: string[], callback?): void;
+    info(message: string, actions?: string[], callback?): void;
     log(message: string): void;
-    info(message: string): void;
 }
 
 export interface GhcModCmdOpts {
