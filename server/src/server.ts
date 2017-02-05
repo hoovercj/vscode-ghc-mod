@@ -218,7 +218,7 @@ function initializeOnDefinition(): void {
     connection.onDefinition((documentInfo): any => {
         let document = documents.get(documentInfo.textDocument.uri);
         return ghcModProvider.getDefinitionLocation(
-            document.getText(),
+            document,
             uriToFilePath(document.uri),
             documentInfo.position,
             workspaceRoot);
@@ -250,7 +250,7 @@ function initializeOnCommand(): void {
 
         let document = documents.get(documentInfo.textDocument.uri);
         let mapFile = mapFiles && dirtyDocuments.has(document.uri);
-        return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), documentInfo.position, mapFile);
+        return ghcModProvider.getInfo(document, uriToFilePath(document.uri), documentInfo.position, mapFile);
     });
 }
 
@@ -278,7 +278,7 @@ function getInfoOrTypeHover(document: TextDocument, position: Position): Promise
 
     return Promise.resolve().then(() => {
         if (haskellConfig.ghcMod.onHover === 'info' || haskellConfig.ghcMod.onHover === 'fallback') {
-            return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), position, mapFile);
+            return ghcModProvider.getInfo(document, uriToFilePath(document.uri), position, mapFile);
         } else {
             return null;
         }

@@ -1,21 +1,55 @@
 import { Position, Range } from 'vscode-languageserver';
 
+import { HaskellLexicalRules } from './haskellLexicalStructure';
+
 export class DocumentUtils {
-    public static getWordAtPosition(text: string, position: Position): string {
-        if (text === null || position === null) {
+    public static getSymbolAtOffset(text: string, offset: number): string {
+        if (text === null || offset === null) {
             return '';
         }
-        let line = text.split('\n')[position.line];
-        if (line) {
-            let startPosition = line.lastIndexOf(' ', position.character) + 1;
-            let endPosition = line.indexOf(' ', position.character);
-            if (endPosition < 0) {
-                endPosition = line.length;
-            }
-            let ret = line.slice(startPosition, endPosition).replace(/[(),]/, '');
-            return ret;
+
+        const identifierCharacterRegex = new RegExp('^' + HaskellLexicalRules.IdentifierRegexCharacterClass + '$', 'u');
+        const operatorCharacterRegex = new RegExp('^' + HaskellLexicalRules.OperatorRegexCharacterClass + '$', 'u');
+
+        const character = text.charAt(offset);
+        const isIdentifier = identifierCharacterRegex.test(character);
+        const isOperator = operatorCharacterRegex.test(character);
+
+        let symbol;
+        
+        if (isIdentifier && isOperator) {
+            throw new Error("Failed to disambiguate character '" + character + "' at offset " + offset);
+        } else if (isIdentifier) {
+            symbol = DocumentUtils.expandAtOffset(text, offset, character => identifierCharacterRegex.test(character));
+        } else if (isOperator) {
+            symbol = DocumentUtils.expandAtOffset(text, offset, character => operatorCharacterRegex.test(character));
+        } else {
+            return '';
         }
-        return '';
+
+        // Ordinary comment is not a symbol
+        if (symbol === '--') {
+            return '';
+        }
+
+        // Nested coment open/close are not symbols
+        if (symbol === '-') {
+            if (text.charAt(offset - 1) === '{' || text.charAt(offset + 1) === '}') {
+                return '';
+            }
+        }
+
+        return symbol;
+    }
+
+    private static expandAtOffset(text: string, offset: number, shouldIncludeCharacter: (character: string) => boolean): string {
+        let start = offset;
+        let end = offset;
+
+        for (; shouldIncludeCharacter(text.charAt(start - 1)); start--) {}
+        for (; shouldIncludeCharacter(text.charAt(end)); end++) {}
+
+        return text.substring(start, end);
     }
 
     public static isPositionInRange(position: Position, range: Range): boolean {

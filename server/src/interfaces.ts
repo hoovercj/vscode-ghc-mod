@@ -2,7 +2,7 @@
  * Copyright (c) Cody Hoover. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { Diagnostic, Position, Location,
+import { Diagnostic, Position, Location, TextDocument,
          DocumentSymbolParams, SymbolInformation } from 'vscode-languageserver';
 
 export enum LogLevel {
@@ -43,8 +43,8 @@ export interface IGhcMod {
 export interface IGhcModProvider {
     doCheck(text: string, uri: string, mapFile: boolean): Promise<Diagnostic[]>;
     getType(text: string, uri: string, position: Position, mapFile: boolean): Promise<string>;
-    getInfo(text: string, uri: string, position: Position, mapFile: boolean): Promise<string>;
-    getDefinitionLocation(text: string, uri: string, position: Position, root: string): Promise<Location[]>;
+    getInfo(document: TextDocument, uri: string, position: Position, mapFile: boolean): Promise<string>;
+    getDefinitionLocation(document: TextDocument, uri: string, position: Position, root: string): Promise<Location[]>;
     shutdown(): void;
 }
 
