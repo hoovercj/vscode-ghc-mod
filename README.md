@@ -42,7 +42,7 @@ There are three main components with distinct responsibilities. `server.ts` is r
 
 ## Publishing
 From the client directory:
-`vsce publish --ImagesUrl https://raw.githubusercontent.com/hoovercj/vscode-ghc-mod/master/client/`
+`vsce publish --baseImagesUrl https://raw.githubusercontent.com/hoovercj/vscode-ghc-mod/master/client/`
 
 ## Next steps
 - Add new commands
