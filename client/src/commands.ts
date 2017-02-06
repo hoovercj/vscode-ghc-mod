@@ -9,6 +9,11 @@ namespace InsertTypeRequest {
     export const type: RequestType<Number, string, void> = { get method(): string { return 'insertType'; } };
 }
 
+export namespace OpenSettingsRequest {
+    'use strict';
+    export const type: RequestType<string, string, void> = { get method(): string { return 'openSettings'; } };
+}
+
 export namespace Commands {
     'use strict';
     function insertType(client: LanguageClient, editor: vscode.TextEditor): void {

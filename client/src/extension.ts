@@ -5,9 +5,9 @@
 'use strict';
 
 import * as path from 'path';
-import { ExtensionContext, workspace } from 'vscode';
+import { ExtensionContext, workspace, commands } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient';
-import { Commands } from './commands';
+import { Commands, OpenSettingsRequest } from './commands';
 import { Logger } from './utils/logger';
 
 export function activate(context: ExtensionContext): void {
@@ -44,6 +44,20 @@ export function activate(context: ExtensionContext): void {
     // client can be deactivated on extension deactivation
     context.subscriptions.push(disposable);
     Commands.register(context, languageClient);
+
+    languageClient.onRequest<string, string, void>(OpenSettingsRequest.type, (action): Promise<string> => {
+        switch (action) {
+            case 'Workspace':
+                commands.executeCommand('workbench.action.openWorkspaceSettings');
+                break;
+            case 'User':
+                commands.executeCommand('workbench.action.openGlobalSettings');
+                break;
+            default:
+                break;
+        }
+        return null;
+    });
 }
 
 function setLogLevel(): void {

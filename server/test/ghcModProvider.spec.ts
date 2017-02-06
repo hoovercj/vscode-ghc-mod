@@ -4,7 +4,7 @@ import { TestGhcMod } from './helpers/testGhcMod';
 import { IGhcMod, IGhcModProvider, ILogger } from '../src/interfaces';
 import { GhcModProvider } from '../src/ghcModProviders/ghcModProvider';
 
-import { DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
+import { DiagnosticSeverity, Position, Range, TextDocument } from 'vscode-languageserver';
 
 describe('GhcModProvider', () => {
     describe('#doCheck', () => {
@@ -136,7 +136,8 @@ describe('GhcModProvider', () => {
             let logger: ILogger = new TestLogger();
             let ghcMod: IGhcMod = new TestGhcMod(ghcModOutput);
             let provider: IGhcModProvider = new GhcModProvider(ghcMod,  '', logger );
-            return provider.getInfo('Any text', null, position, false).then((info) => {
+            let document: TextDocument = TextDocument.create('uri', 'languageId', 1, 'Any text');
+            return provider.getInfo(document, null, position, false).then((info) => {
                 assert.equal(info, 'Symbol\nInfo');
             });
         });

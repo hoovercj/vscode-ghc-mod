@@ -2,7 +2,7 @@
  * Copyright (c) Cody Hoover. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { IConnection, RemoteConsole, RemoteWindow } from 'vscode-languageserver';
+import { IConnection, RemoteConsole, RemoteWindow, MessageActionItem } from 'vscode-languageserver';
 import { LogLevel, ILogger } from '../interfaces';
 
 export class RemoteConnectionAdapter implements ILogger {
@@ -27,25 +27,47 @@ export class RemoteConnectionAdapter implements ILogger {
     public log(message: string): void {
         if (this.level >= LogLevel.log) {
             this.logger.log(message);
+            console.log(message);
         }
     }
 
-    public info(message: string): void {
+    public info(message: string, actions?: string[], callback?): void {
         if (this.level >= LogLevel.info) {
             this.logger.info(message);
+            console.info(message);
+            if (actions && callback) {
+                let messageActionItems = actions.map((action) => { return <MessageActionItem>{ title: action }; });
+                this.window.showInformationMessage(message, ...messageActionItems).then(selected => {
+                    callback(selected.title);
+                });
+            }
         }
     }
 
-    public warn(message: string): void {
+    public warn(message: string, actions?: string[], callback?): void {
         if (this.level >= LogLevel.warn) {
             this.logger.warn(message);
+            console.warn(message);
+            if (actions && callback) {
+                let messageActionItems = actions.map((action) => { return <MessageActionItem>{ title: action }; });
+                this.window.showWarningMessage(message, ...messageActionItems).then(selected => {
+                    callback(selected.title);
+                });
+            }
         }
     }
 
-    public error(message: string): void {
+    public error(message: string, actions?: string[], callback?): void {
         if (this.level >= LogLevel.error) {
             this.logger.error(message);
             this.window.showErrorMessage(message);
+            console.error(message);
+            if (actions && callback) {
+                let messageActionItems = actions.map((action) => { return <MessageActionItem>{ title: action }; });
+                this.window.showErrorMessage(message, ...messageActionItems).then(selected => {
+                    callback(selected.title);
+                });
+            }
         }
     }
 }

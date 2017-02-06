@@ -118,27 +118,22 @@ function initializeGhcMod(): void {
         ghcModProvider = null;
     }
 
-    // Disable current listeners
-    connection.onHover(null);
-    connection.onRequest(InsertTypeRequest.type, null);
-    documents.onDidChangeContent(null);
-    documents.onDidSave(null);
-
     // Create new ghcMod and provider
     ghcMod = createGhcMod();
     if (ghcMod) {
         ghcModProvider = new GhcModProvider(ghcMod, workspaceRoot, logger);
+    } else {
+        logger.error('Try configuring user or workspace settings for haskell.ghcMod.executablePath',
+                ['Workspace', 'User'], (action) => {
+            connection.sendRequest<string, string, void>(OpenSettingsRequest.type, action);
+        });
     }
 
-    // Initialize listeners if appropriate
-    if (ghcMod && ghcModProvider) {
-        initializeDocumentSync();
-        initializeOnHover();
-        initializeOnDefinition();
-        initializeOnCommand();
-    } else {
-        connection.onDefinition(null);
-    }
+    // Initialize listeners
+    initializeDocumentSync();
+    initializeOnHover();
+    initializeOnDefinition();
+    initializeOnCommand();
 }
 
 function initializeSymbolProvider(): void {
@@ -155,15 +150,20 @@ function initializeSymbolProvider(): void {
             break;
     }
 
-    if (symbolProvider) {
-        connection.onDocumentSymbol((uri) => symbolProvider.getSymbolsForFile(uri));
-        connection.onWorkspaceSymbol((query, cancellationToken) =>
-            symbolProvider.getSymbolsForWorkspace(query, cancellationToken));
-    } else {
-        connection.onDocumentSymbol(null);
-        connection.onWorkspaceSymbol(null);
-    }
+    connection.onDocumentSymbol((uri) => {
+        if (!symbolProvider || !ghcMod || !ghcModProvider) {
+            return null;
+        }
 
+        return symbolProvider.getSymbolsForFile(uri);
+    });
+    connection.onWorkspaceSymbol((query, cancellationToken) => {
+        if (!symbolProvider || !ghcMod || !ghcModProvider) {
+            return null;
+        }
+
+        return symbolProvider.getSymbolsForWorkspace(query, cancellationToken);
+    });
 }
 
 function initializeDocumentSync(): void {
@@ -218,7 +218,7 @@ function initializeOnDefinition(): void {
     connection.onDefinition((documentInfo): any => {
         let document = documents.get(documentInfo.textDocument.uri);
         return ghcModProvider.getDefinitionLocation(
-            document.getText(),
+            document,
             uriToFilePath(document.uri),
             documentInfo.position,
             workspaceRoot);
@@ -230,9 +230,19 @@ namespace InsertTypeRequest {
     export const type: RequestType<Number, string, void> = { get method(): string { return 'insertType'; } };
 }
 
+namespace OpenSettingsRequest {
+    'use strict';
+    export const type: RequestType<string, string, void> = { get method(): string { return 'openSettings'; } };
+}
+
 function initializeOnCommand(): void {
     connection.onRequest<TextDocumentPositionParams, string, void>
             (InsertTypeRequest.type, (documentInfo: TextDocumentPositionParams): Promise<string> => {
+
+        if (!ghcMod || !ghcModProvider) {
+            return null;
+        }
+
         let filename = basename(documentInfo.textDocument.uri);
         let line = documentInfo.position.line;
         let character = documentInfo.position.character;
@@ -240,7 +250,7 @@ function initializeOnCommand(): void {
 
         let document = documents.get(documentInfo.textDocument.uri);
         let mapFile = mapFiles && dirtyDocuments.has(document.uri);
-        return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), documentInfo.position, mapFile);
+        return ghcModProvider.getInfo(document, uriToFilePath(document.uri), documentInfo.position, mapFile);
     });
 }
 
@@ -268,7 +278,7 @@ function getInfoOrTypeHover(document: TextDocument, position: Position): Promise
 
     return Promise.resolve().then(() => {
         if (haskellConfig.ghcMod.onHover === 'info' || haskellConfig.ghcMod.onHover === 'fallback') {
-            return ghcModProvider.getInfo(document.getText(), uriToFilePath(document.uri), position, mapFile);
+            return ghcModProvider.getInfo(document, uriToFilePath(document.uri), position, mapFile);
         } else {
             return null;
         }
