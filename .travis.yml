@@ -11,7 +11,7 @@ node_js:
 
 os:
   - linux
-  # - osx
+  - osx
 
 addons:
   apt:
