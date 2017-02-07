@@ -28,18 +28,19 @@ export class DocumentUtils {
         }
 
         // Ordinary comment is not a symbol
-        if (symbol === '--') {
+        if (symbol.string === '--') {
             return '';
         }
 
         // Nested coment open/close are not symbols
-        if (symbol === '-') {
-            if (text.charAt(offset - 1) === '{' || text.charAt(offset + 1) === '}') {
-                return '';
-            }
+        if (text.charAt(symbol.start) === '-' && text.charAt(symbol.start - 1) === '{') {
+            return '';
+        }
+        if (text.charAt(symbol.end - 1) === '-' && text.charAt(symbol.end) === '}') {
+            return '';
         }
 
-        return symbol;
+        return symbol.string;
     }
 
     public static isPositionInRange(position: Position, range: Range): boolean {
@@ -53,14 +54,24 @@ export class DocumentUtils {
         return true;
     }
 
-    private static expandAtOffset(text: string, offset: number,
-            shouldIncludeCharacter: (character: string) => boolean): string {
+    private static expandAtOffset(
+        text: string,
+        offset: number,
+        shouldIncludeCharacter: (character: string) => boolean): {
+            string: string;
+            start: number;
+            end: number;
+    } {
         let start = offset;
         let end = offset;
 
         for (; shouldIncludeCharacter(text.charAt(start - 1)); start--) { /* Intentionally empty */ }
         for (; shouldIncludeCharacter(text.charAt(end)); end++) { /* Intentionally empty */ }
 
-        return text.substring(start, end);
+        return {
+            string: text.substring(start, end),
+            start: start,
+            end: end,
+        };
     }
 }

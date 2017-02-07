@@ -53,6 +53,14 @@ describe('DocumentUtils', () => {
             assert.equal(DocumentUtils.getSymbolAtOffset('-}', 0), '');
         });
 
+        it ('should return an empty string for start of a pragma', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('{-#', 2), '');
+        });
+
+        it ('should return an empty string for end of pragma', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('#-}', 0), '');
+        });
+
         it ('should return an empty string if the position is a space', () => {
             assert.equal(DocumentUtils.getSymbolAtOffset(' ', 0), '');
         });
