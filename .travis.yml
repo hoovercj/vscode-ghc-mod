@@ -1,5 +1,9 @@
-sudo: required
-dist: trusty
+sudo: false
+
+# Caching so the next build will be fast too.
+cache:
+  directories:
+  - $HOME/.stack
 
 language: node_js
 node_js:
@@ -7,33 +11,28 @@ node_js:
 
 os:
   - linux
-  # - osx
+  - osx
+
+addons:
+  apt:
+    packages:
+      # Stack dependencies
+      - libgmp-dev
 
 before_install:
-  - if [ $TRAVIS_OS_NAME == "linux" ]; then
-      export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
-      sh -e /etc/init.d/xvfb start;
-      sleep 3;
-      sudo apt-get --yes install haskell-platform;
+  # Download and unpack the stack executable
+  - mkdir -p ~/.local/bin
+  - export PATH="$HOME/.local/bin:$PATH"
+  - |
+    if [ `uname` = "Darwin" ]
+    then
+      travis_retry curl --insecure -L https://www.stackage.org/stack/osx-x86_64 | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
     else
-      curl "https://downloads.haskell.org/~platform/7.10.3/Haskell%20Platform%207.10.3%2064bit.pkg" -o "x.pkg";
-      travis_wait sudo installer -pkg x.pkg -target / ;
+      travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
     fi
-
-
 install:
-  - ghc --version
-  - cabal --version
-  - cabal update
-  - cabal install ghc-mod --constraint=extra==1.4.12 --constraint=safe==0.3.9 --constraint=hlint==1.9.35
-  - git clone https://github.com/hoovercj/fast-tags.git
-  - cabal install fast-tags/fast-tags.cabal
-  - cabal install hasktags
-  - if [ $TRAVIS_OS_NAME == "linux" ]; then 
-      export PATH="/home/travis/.cabal/bin:$PATH";
-    else
-      export PATH="/Users/travis/Library/Haskell/bin:$PATH";
-    fi
+  - stack --version
+  - stack install --install-ghc --local-bin-path ~/.local/bin fast-tags hasktags ghc-mod
   - cd client
   - npm install
   - npm run vscode:prepublish
