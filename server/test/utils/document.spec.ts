@@ -45,6 +45,10 @@ describe('DocumentUtils', () => {
             assert.equal(DocumentUtils.getSymbolAtOffset('--comment', 0), '');
         });
 
+        it ('should return an empty string for an ordinary comment with more than two dashes', () => {
+            assert.equal(DocumentUtils.getSymbolAtOffset('---', 0), '');
+        });
+
         it ('should return an empty string for start of nested comment', () => {
             assert.equal(DocumentUtils.getSymbolAtOffset('{-', 1), '');
         });

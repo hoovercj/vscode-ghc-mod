@@ -28,7 +28,7 @@ export class DocumentUtils {
         }
 
         // Ordinary comment is not a symbol
-        if (symbol.string === '--') {
+        if (/^--+$/.test(symbol.string)) {
             return '';
         }
 
