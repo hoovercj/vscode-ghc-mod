@@ -105,8 +105,8 @@ export class GhcModProvider implements IGhcModProvider {
     }
 
     private isBlacklisted(symbol: string): boolean {
-        // Reserved operator that crashes ghc-mod info
-        if (symbol === '->') {
+        // Symbols starting with a dash crash ghc-mod info, except for '-'
+        if (symbol.charAt(0) === '-' && symbol !== '-') {
             return true;
         }
 
