@@ -13,7 +13,7 @@
     "homepage": "https://github.com/hoovercj/vscode-gh-mod",
     "icon": "images/icon.png",
     "license": "MIT",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "publisher": "hoovercj",
     "engines": {
         "vscode": "^1.0.0"
@@ -45,7 +45,7 @@
                 "haskell.ghcMod.executablePath": {
                     "type": "string",
                     "default": "ghc-mod",
-                    "description": "The full path to the ghc-mod executable."
+                    "description": "The full path to the ghc-mod executable, or 'stack' to use 'stack exec ghc-mod'."
                 },
                 "haskell.ghcMod.onHover": {
                     "type": "string",

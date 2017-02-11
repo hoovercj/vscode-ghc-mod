@@ -30,13 +30,14 @@ export class InteractiveGhcModProcess implements IGhcMod {
             executable: 'ghc-mod',
             rootPath: ''
         };
+
         options = options || defaultOptions;
 
         // Make sure executable path can be executed.
         try {
-            cp.execSync(`${options.executable} version`);
+            cp.execSync(`${options.executable} --version`);
         } catch (error) {
-            logger.error(`Couldn't start ghc-mod process ${error}`);
+            logger.error(`Couldn't start ${options.executable} process ${error}`);
             return null;
         }
 
@@ -73,7 +74,7 @@ export class InteractiveGhcModProcess implements IGhcMod {
                     return res;
                 });
             }, (err) => {
-                this.logger.error('Error running ghc-mod command -' + err);
+                this.logger.error(`Error running ${options.command} command - ${err}`);
             });
     }
 
@@ -135,9 +136,14 @@ export class InteractiveGhcModProcess implements IGhcMod {
         }
         let errorDelayer = new ThrottledDelayer<void>(100);
         let errorLines: string[] = [];
-        this.childProcess = cp.spawn(this.options.executable, ['legacy-interactive'], { cwd: this.options.rootPath });
+
+        let ghcArgs = ['legacy-interactive'];
+        let stackArgs = ['exec', 'ghc-mod', '--'].concat(ghcArgs);
+        let processArgs = this.options.executable === 'stack' ? stackArgs : ghcArgs;
+
+        this.childProcess = cp.spawn(this.options.executable, processArgs, { cwd: this.options.rootPath });
         this.childProcess.on('error', (err) => {
-            this.logger.error(`Error spawning ghc-mod process - ${err}`);
+            this.logger.error(`Error spawning ${this.options.executable} process - ${err}`);
         });
         this.childProcess.on('exit', () => {
             this.logger.log('EXIT: ghc-mod process');

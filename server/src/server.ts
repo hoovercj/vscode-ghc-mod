@@ -86,7 +86,7 @@ interface ExtensionSettings {
     };
 }
 
-let haskellConfig: ExtensionSettings = Object.create({ghcMod: {}, symbols: {}});
+let haskellConfig: ExtensionSettings = <ExtensionSettings>Object.create({ghcMod: {}, symbols: {}});
 
 let mapFiles: boolean = false;
 
