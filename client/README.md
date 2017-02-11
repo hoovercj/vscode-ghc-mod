@@ -3,6 +3,8 @@ This exension exposes ghc-mod functionality to VS Code. It requires having ghc-m
 
 Symbol support requires having fast-tags or hasktags installed. For this reason, symbols are disabled by default. Change the configuration to enable it.
 
+**New** Stack Support: I've tested it with simple stack projects (one stack.yaml/.cabal file in the root). Simply set `"haskell.ghcMod.executablePath": "stack"` in workspace or user settings (experimental and subject to change). Open an [issue](https://www.github.com/hoovercj/vscode-ghc-mod/issues) to help me improve it.
+
 ## Features:
 - `check`: Works best when configured to run "onSave" with autosave turned on. "onChange" is experimental and may cause problems with type, info, and "Peek/Go to definition" until a newer version of ghc-mod has improved support for map-file.
 - `type` and `info`: Displayed when hovering the mouse over a symbol. See below for configuration.
@@ -54,7 +56,7 @@ The following options can be set in workspace or user preferences:
 "haskell.ghcMod.executablePath": {
     "type": "string",
     "default": "ghc-mod",
-    "description": "The full path to the ghc-mod executable."
+    "description": "The full path to the ghc-mod executable, or 'stack' to use 'stack exec ghc-mod'."
 },
 "haskell.ghcMod.onHover": {
     "type": "string",
@@ -87,7 +89,7 @@ The following options can be set in workspace or user preferences:
         "error"
     ],
     "default": "error",
-    "description": "Controls the verbosity of logging. Logs can be seen in the console by opening the dev tools."
+    "description": "Controls the verbosity of logging. Logs can be seen in an output channel called 'ghc-mod server' or the chrome dev tools."
 },
 "haskell.symbols.provider": {
     "type": "string",
@@ -107,6 +109,9 @@ The following options can be set in workspace or user preferences:
 ```
 
 ## Changelog
+__1.2.0__
+- Closed [#35](https://github.com/hoovercj/vscode-ghc-mod/issues/35): Added experimental support for stack projects. Setting `haskell.ghcMod.executablePath` to `stack` will now use `stack exec` to execute ghc-mod.
+
 __1.1.1__
 - Closed [#51](https://github.com/hoovercj/vscode-ghc-mod/issues/51): Non-actionable errors no longer use window.showErrorMessage. Errors are still shown in the output channel under "ghc-mod server".
 
