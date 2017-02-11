@@ -13,7 +13,7 @@
     "homepage": "https://github.com/hoovercj/vscode-gh-mod",
     "icon": "images/icon.png",
     "license": "MIT",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "publisher": "hoovercj",
     "engines": {
         "vscode": "^1.0.0"
@@ -56,7 +56,7 @@
                         "none"
                     ],
                     "default": "fallback",
-                    "description": "Controls the onHover behavior. 'info' will display ghc-mod info, 'type' will display ghc-mod type, 'fallback' will try info and fallback to type,and 'none' will disable onHover tooltips."
+                    "description": "Controls the onHover behavior. 'info' will display ghc-mod info, 'type' will display ghc-mod type, 'fallback' will try info and fallback to type, and 'none' will disable onHover tooltips."
                 },
                 "haskell.ghcMod.check": {
                     "type": "string",
@@ -78,7 +78,8 @@
                         "error"
                     ],
                     "default": "error",
-                    "description": "Controls the verbosity of logging. Logs can be seen in the console by opening the dev tools."
+
+                    "description": "Controls the verbosity of logging. Logs can be seen in an output channel called 'ghc-mod server' or the chrome dev tools."
                 },
                 "haskell.symbols.provider": {
                     "type": "string",

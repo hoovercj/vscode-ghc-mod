@@ -107,9 +107,12 @@ The following options can be set in workspace or user preferences:
 ```
 
 ## Changelog
+__1.1.1__
+- Closed [#51](https://github.com/hoovercj/vscode-ghc-mod/issues/51): Non-actionable errors no longer use window.showErrorMessage. Errors are still shown in the output channel under "ghc-mod server".
+
 __1.1.0__
-- Closed [#41](https://github.com/hoovercj/vscode-ghc-mod/issues/41): Fixed crashes on certain symbols (-1, -n, etc.). Thanks to @danstiner for the fix
-- Closed [#43](https://github.com/hoovercj/vscode-ghc-mod/issues/43): Added ["Haskell Syntax Highlighting"](https://marketplace.visualstudio.com/items?itemName=justusadam.language-haskell) as an extension dependency
+- Closed [#41](https://github.com/hoovercj/vscode-ghc-mod/issues/41): Fixed crashes on certain symbols (-1, -n, etc.). Thanks to @danstiner for the fix.
+- Closed [#43](https://github.com/hoovercj/vscode-ghc-mod/issues/43): Added ["Haskell Syntax Highlighting"](https://marketplace.visualstudio.com/items?itemName=justusadam.language-haskell) as an extension dependency.
 - Closed [#40](https://github.com/hoovercj/vscode-ghc-mod/issues/40): Logging uses output channel
 - Closed [#37](https://github.com/hoovercj/vscode-ghc-mod/issues/37): When ghc-mod cannot be started, error prompt contains information and actions to change the user or workspace settings.
 

@@ -60,7 +60,6 @@ export class RemoteConnectionAdapter implements ILogger {
     public error(message: string, actions?: string[], callback?): void {
         if (this.level >= LogLevel.error) {
             this.logger.error(message);
-            this.window.showErrorMessage(message);
             console.error(message);
             if (actions && callback) {
                 let messageActionItems = actions.map((action) => { return <MessageActionItem>{ title: action }; });
