@@ -152,14 +152,14 @@ function initializeSymbolProvider(): void {
 
     connection.onDocumentSymbol((uri) => {
         if (!symbolProvider || !ghcMod || !ghcModProvider) {
-            return null;
+            return [];
         }
 
         return symbolProvider.getSymbolsForFile(uri);
     });
     connection.onWorkspaceSymbol((query, cancellationToken) => {
         if (!symbolProvider || !ghcMod || !ghcModProvider) {
-            return null;
+            return [];
         }
 
         return symbolProvider.getSymbolsForWorkspace(query, cancellationToken);
